@@ -1,0 +1,65 @@
+@charset "utf-8";
+body {
+    font-family: "Times New Roman";
+    font-style: italic;
+    font-size: medium;
+}
+header {
+    font-family: Helvetica, "Prestige Elite Std";
+    font-style: normal;
+    font-variant: normal;
+    font-size: xx-large;
+    letter-spacing: 0.3em;
+    height: auto;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+body {
+}
+body div {
+    font-family: "Times New Roman";
+    font-style: italic;
+    font-size: small;
+    text-align: justify;
+    max-width: 600px;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    margin-right: auto;
+    margin-left: auto;
+    min-width: 200px;
+    margin-top: 25px;
+}
+button {
+    font-family: "Prestige Elite Std";
+    align-content: center;
+    text-decoration: underline;
+    background-color: #FFFFFF;
+    border: none;
+    -webkit-box-shadow: 0px 0px;
+    box-shadow: 0px 0px;
+    color: #000000;
+    text-align: justify;
+}	
+button:hover {
+  cursor: pointer;
+}
+p {
+    min-width: 200px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 25px;
+    font-size: small;
+    word-spacing: -2.1px;
+}
+header a {
+    height: auto;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    font-family: Helvetica, "Prestige Elite Std";
+    font-style: normal;
+    font-variant: normal;
+    font-size: xx-large;
+    letter-spacing: 0.3em;
+}
