@@ -81,3 +81,19 @@ h4 {
     min-width: 200px;
     margin-top: 25px;
 }
+p {
+    font-family: prestige-elite-std, monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-style: italic;
+    font-size: small;
+    text-align: justify;
+    max-width: 600px;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    margin-right: auto;
+    margin-left: auto;
+    min-width: 200px;
+    margin-top: 25px;
+}
