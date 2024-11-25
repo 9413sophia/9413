@@ -5,7 +5,7 @@ body {
     font-size: medium;
 }
 header {
-    font-family: Helvetica, "Prestige Elite Std";
+    font-family: Helvetica;
     font-style: normal;
     font-variant: normal;
     font-size: xx-large;
@@ -31,7 +31,7 @@ body div {
     margin-top: 25px;
 }
 button {
-    font-family: "Prestige Elite Std";
+    font-family: "prestige-regular";
     align-content: center;
     text-decoration: underline;
     background-color: #FFFFFF;
@@ -62,4 +62,34 @@ header a {
     font-variant: normal;
     font-size: xx-large;
     letter-spacing: 0.3em;
+}
+h4 {
+    font-family: "prestige-regular";
+    font-style: italic;
+    font-size: small;
+    text-align: justify;
+    max-width: 600px;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    margin-right: auto;
+    margin-left: auto;
+    min-width: 200px;
+    margin-top: 25px;
+}
+@font-face{
+    font-family:prestige-bold-slanted;
+    src:url(bold-slanted.ttf)
+}
+@font-face{
+    font-family:prestige-bold;
+    src:url(bold.ttf)
+}
+@font-face{
+    font-family:prestige-regular;
+    src:url(regular.ttf)
+}
+@font-face{
+    font-family:prestige-slanted;
+    src:url(slanted.ttf)
 }
