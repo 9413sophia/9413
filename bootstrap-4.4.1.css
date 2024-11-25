@@ -97,8 +97,3 @@ p {
     min-width: 200px;
     margin-top: 25px;
 }
-@media only screen and (max-width:640px) {
-  .sqs-block-html {
-    margin: 20px;
-  }
-}
