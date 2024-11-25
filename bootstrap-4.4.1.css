@@ -70,7 +70,7 @@ h4 {
     font-style: normal;
     font-weight: 400;
     font-size: small;
-    text-align: center;
+    text-align: justify;
     max-width: 600px;
     -webkit-box-sizing: content-box;
     -moz-box-sizing: content-box;
@@ -85,7 +85,7 @@ p {
     font-style: normal;
     font-weight: 400;
     font-size: small;
-    text-align: center;
+    text-align: justify;
     max-width: 600px;
     -webkit-box-sizing: content-box;
     -moz-box-sizing: content-box;
