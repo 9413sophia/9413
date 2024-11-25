@@ -31,7 +31,9 @@ body div {
     margin-top: 25px;
 }
 button {
-    font-family: "prestige-regular";
+    font-family: prestige-elite-std, monospace;
+    font-style: normal;
+    font-weight: 400;
     align-content: center;
     text-decoration: underline;
     background-color: #FFFFFF;
@@ -64,7 +66,9 @@ header a {
     letter-spacing: 0.3em;
 }
 h4 {
-    font-family: "prestige-regular";
+    font-family: prestige-elite-std, monospace;
+    font-style: normal;
+    font-weight: 400;
     font-style: italic;
     font-size: small;
     text-align: justify;
@@ -76,20 +80,4 @@ h4 {
     margin-left: auto;
     min-width: 200px;
     margin-top: 25px;
-}
-@font-face{
-    font-family:prestige-bold-slanted;
-    src:url(bold-slanted.ttf)
-}
-@font-face{
-    font-family:prestige-bold;
-    src:url(bold.ttf)
-}
-@font-face{
-    font-family:prestige-regular;
-    src:url(regular.ttf)
-}
-@font-face{
-    font-family:prestige-slanted;
-    src:url(slanted.ttf)
 }
