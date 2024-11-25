@@ -5,7 +5,7 @@ body {
     font-size: medium;
 }
 header {
-    font-family: Helvetica;
+    font-family: "Helvetica";
     font-style: normal;
     font-variant: normal;
     font-size: xx-large;
@@ -31,7 +31,7 @@ body div {
     margin-top: 25px;
 }
 button {
-    font-family:prestige-regular;
+    font-family: "prestige-regular";
     align-content: center;
     text-decoration: underline;
     background-color: #FFFFFF;
