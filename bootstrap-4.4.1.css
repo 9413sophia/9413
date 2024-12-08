@@ -95,7 +95,7 @@ p {
     min-width: 200px;
     margin-top: 25px;
 }
-@media screen and (max-width: 400px) {
-  margin-right: 25%;
-    margin-left: 25%;
+@media screen and (max-width: 600px) {
+  margin-right: 10vw;
+    margin-left: 10vw;
 }
