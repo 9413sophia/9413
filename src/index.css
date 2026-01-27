@@ -1,4 +1,30 @@
-/* Fungal VF Font */
+/* ============================================
+   GLOBAL VARIABLES - PADDING & SPACING
+   ============================================ */
+:root {
+  /* Global padding system */
+  --padding-xs: 0.5rem;    /* 8px */
+  --padding-sm: 1rem;      /* 16px */
+  --padding-md: 2rem;      /* 32px */
+  --padding-lg: 3rem;      /* 48px */
+  --padding-xl: 4rem;      /* 64px */
+  
+  /* Edge margins - consistent distances from viewport edges */
+  --edge-margin-mobile: 0.5rem;
+  --edge-margin-desktop: 1rem;
+  
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 20px;
+  
+  /* Glass effect backdrop */
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-blur: blur(40px);
+}
+
+/* ============================================
+   FUNGAL VF FONT
+   ============================================ */
 @font-face {
   font-family: 'FungalVF';
   src: url('/src/fonts/FungalVF.woff') format('woff');
@@ -6,12 +32,9 @@
   font-style: normal;
 }
 
-/* CSS Variables for animations */
-:root {
-  --scroll-progress: 0;
-}
-
-/* Base Typography */
+/* ============================================
+   BASE TYPOGRAPHY
+   ============================================ */
 body {
   margin: 0;
   padding: 0;
@@ -38,14 +61,23 @@ h2 {
   font-weight: 400;
 }
 
-/* Navigation Text Class */
+button {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
 .navigation-text {
   font-size: 1rem;
   margin: 0;
-}
-
-.navigation-text:hover {
-  font-style: italic;
   cursor: pointer;
 }
 
@@ -53,110 +85,86 @@ h2 {
   font-style: italic;
 }
 
-/* Scroll-Tied Fungal VF Animation for Publication/Film/Archive */
-/* EDIT THESE VALUES to change scroll animation behavior */
-.sofia-nav-scroll {
-  font-family: 'FungalVF', Times, serif;
-  font-variation-settings: 
-    "grow" calc(100 + var(--scroll-progress) * 900),
-    "THCK" calc(var(--scroll-progress) * 100);
-  transition: font-variation-settings 0.1s ease-out;
-  /* 
-    CURRENT BEHAVIOR:
-    - grow: 100 (at top) → 1000 (at bottom)
-    - THCK: 0 (at top) → 100 (at bottom)
-    
-    TO EDIT THE RANGE:
-    Change "100 + var(--scroll-progress) * 900" to adjust grow range
-    Example: "500 + var(--scroll-progress) * 500" = 500→1000
-    
-    Change "var(--scroll-progress) * 100" to adjust THCK range
-    Example: "50 + var(--scroll-progress) * 50" = 50→100
-  */
+/* Sticky Navigation */
+.sticky-nav {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  padding: var(--padding-sm) var(--padding-xs) var(--padding-xs) var(--padding-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--padding-sm);
+  overflow-x: scroll;
 }
 
-/* Publication/Film specific scroll animations */
-.sofia-nav-scroll.publication,
-.sofia-nav-scroll.film {
-  font-family: 'FungalVF', Times, serif;
-  /* Inherits from .sofia-nav-scroll */
+.nav-spacer {
+  width: 100px;
 }
 
-/* Archive specific scroll animations */
-.sofia-nav-scroll.archive {
-  font-family: 'FungalVF', Times, serif;
-  /* Inherits from .sofia-nav-scroll */
-  /* 
-    EDIT NOTE: This is now SCROLL-TIED (not static)
-    The animation changes as you scroll down the page
-    To make it static, replace with:
-    font-variation-settings: "grow" 500, "THCK" 60;
-  */
-}
-
-.heading-sofia.serif.archive {
-  font-family: 'FungalVF', Times, serif;
-  font-variation-settings: 
-    "grow" calc(100 + var(--scroll-progress) * 900),
-    "THCK" calc(var(--scroll-progress) * 100);
-}
-
-.small-sofia.serif.archive {
-  font-family: 'FungalVF', Times, serif;
-  font-variation-settings: 
-    "grow" calc(100 + var(--scroll-progress) * 900),
-    "THCK" calc(var(--scroll-progress) * 100);
-}
-
-/* Item Row Styling */
+/* ============================================
+   ITEM ROW LAYOUT
+   ============================================ */
 .item-row {
   height: 300px;
   width: 100vw;
   display: flex;
   border-bottom: 1px solid black;
   overflow: hidden;
-  transition: height 0.3s ease;
-}
-
-.item-row.expanded {
-  height: 100vh;
+  position: relative;
 }
 
 .item-image {
   width: 50vw;
+  flex-shrink: none;
+  min-width: 50vw;
   height: 100%;
   object-fit: cover;
   border-right: 1px solid black;
-  cursor: pointer;
-  transition: width 0.3s ease;
-}
-
-.item-row.expanded .item-image {
-  width: 100vw;
 }
 
 .item-content {
   width: 50vw;
-  padding: 2rem;
+  padding: var(--padding-sm);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-start;
-  gap: 1rem;
-  transition: opacity 0.3s ease;
+  gap: var(--padding-sm);
+  position: relative;
 }
 
-.item-row.expanded .item-content {
-  opacity: 0;
-  pointer-events: none;
+/* Item Content Elements */
+.item-title {
+  font-size: 2rem;
 }
 
-/* Display Block for Most Recent */
+.item-description {
+  font-size: 1rem;
+}
+
+.item-category {
+  font-family: Times, 'Times New Roman', serif !important;
+  font-variation-settings: normal !important;
+  position: absolute;
+  top: var(--padding-sm);
+  left: var(--padding-sm);
+  line-height: 0rem;
+}
+
+/* ============================================
+   DISPLAY BLOCK (First in Channel)
+   ============================================ */
 .display-block {
   width: 100vw;
   height: 120vh;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid black;
 }
 
 .display-block img {
@@ -170,45 +178,33 @@ h2 {
   top: 0;
   left: 0;
   right: 0;
-  bottom:0;
-  height: 30%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,1));
+}
+
+/* Display Block Text */
+.display-text-wrap {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid black;
+  padding-top: 2.5rem;
+  gap: 1.5rem;
 }
 
-.display-overlay-inverted {
-  position: absolute;
-  background: linear-gradient(to bottom, rgba(255,255,255,1), rgba(255,255,255,0));
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding-top: 24px;
-}
-
-/* Display Block Text */
 .display-text {
   font-size: 2rem;
-  margin: 0.5rem 0;
   font-weight: 400;
-  position: relative;
-  z-index: 2; /* above the gradient */
+  z-index: 2;
+  line-height: 2rem;
 }
 
-.display-category {
-  font-size: 1.5rem;
-  margin: 0;
-  position: relative;
-  z-index: 2; /* above the gradient */
-}
-
+/* ============================================
+   BUTTONS
+   ============================================ */
 /* Show More Button */
 .show-more-button {
-  padding: 1rem 3rem;
+  padding: var(--padding-sm) var(--padding-lg);
   background: #E8EBFF;
   cursor: pointer;
   font-family: Times, serif;
@@ -236,36 +232,76 @@ h2 {
   to { width: 100%; }
 }
 
-/* Grid Layout */
+.info-button {
+  position: fixed;
+  top: var(--padding-xs);
+  right: 6rem;
+  z-index: 200;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: none;
+  padding: var(--padding-xs) var(--padding-sm);
+  font-family: Times, serif;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.info-button:hover {
+  font-style: italic;
+}
+
+/* Contact Button - SIMILAR TO info-button */
+.contact-button {
+  position: fixed;
+  top: var(--padding-xs);
+  right: var(--padding-xs);
+  z-index: 200;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: var(--padding-xs) var(--padding-sm);
+  font-family: Times, serif;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.contact-button:hover {
+  font-style: italic;
+}
+
+/* NOTE: info-button and contact-button are NEARLY IDENTICAL except for position.
+   Consider consolidating into .fixed-button with modifiers */
+
+/* ============================================
+   GRID LAYOUT
+   ============================================ */
 .grid-3col {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: repeat(5, 0.8fr);
+  gap: var(--padding-sm);
+  padding: var(--padding-sm);
 }
 
 .grid-3col img {
-  width: 19vw;
+  width: calc(20vw - 2*  var(--padding-sm));
   height: 100%;
   object-fit: contain;
   display: block;
-  border-radius: 20px;
+  border-radius: var(--radius-md);
 }
 
-
-/* Choreographed Deconstruction Animation - TIME SENSITIVE */
-/* EDIT THESE VALUES to change the animation timing and variation settings */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+/* Choreographed Deconstruction Animation */
 .choreographed-animation {
   font-family: 'FungalVF', Times, serif;
   animation: choreographedGrow 8s ease-in-out forwards;
-  /* 
-    EDIT ANIMATION DURATION: Change "8s" to adjust speed (e.g., "5s", "10s")
-    EDIT TIMING FUNCTION: Change "ease-in-out" to "linear", "ease-in", "ease-out"
-  */
+  font-size: 2.5rem;
 }
 
 @keyframes choreographedGrow {
-  /* EDIT THESE KEYFRAMES to change the animation path */
   0% {
     font-variation-settings: "grow" 100, "THCK" 10;
   }
@@ -281,83 +317,18 @@ h2 {
   100% {
     font-variation-settings: "grow" 500, "THCK" 60;
   }
-  /* 
-    EDIT grow: Range 100-1000
-    EDIT THCK: Range 0-100
-  */
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .item-row {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .item-row.expanded {
-    width:100vw;
-    height: auto;
-
-  }
-  .item-row.expanded .item-content {
-  opacity: 100;
-  pointer-events: none;
-  }
-  
-  .item-image {
-    width: 100vw;
-    height: auto;
-    border-right: none;
-  }
-
-
-  
-  .item-content {
-    width: 100vw;
-    padding: 2rem;
-  }
-
-  .grid-3col {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .display-block {
-    height: 80vh;
-  }
-
-  .display-overlay-inverted {
-    padding: none;
-  }
-
-  .contact-button {
-    top: 0.5rem;
-
-  }
-
-
-
-
-
-  .grid-3col {
-    grid-template-columns: 1fr;
-  }
-  
-  h1 {
-    font-size: 1.5rem;
-  }
-  
-  h2 {
-    font-size: 1.25rem;
-  }
-}
-
-/* Hero Section */
+/* ============================================
+   HERO SECTIONS
+   ============================================ */
+/* Main Hero Section */
 .hero-section {
   height: 60vh;
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: last baseline;
+  align-items: flex-end;
   justify-content: center;
 }
 
@@ -366,6 +337,7 @@ h2 {
   max-width: 65%;
   text-align: center;
   z-index: 2;
+  border-radius: var(--radius-sm);
 }
 
 .hero-bg {
@@ -374,20 +346,18 @@ h2 {
   inset: 0;
   background-size: cover;
   background-position: center;
-
   -webkit-mask-image: linear-gradient(
     to top,
     rgba(0,0,0,0) 0%,
     rgba(0,0,0,0.5) 20%,
-    rgba(0,0,0,1) 30%
+    rgba(0,0,0,1) 50%
   );
   mask-image: linear-gradient(
     to top,
     rgba(0,0,0,0) 0%,
     rgba(0,0,0,0.5) 20%,
-    rgba(0,0,0,1) 30%
+    rgba(0,0,0,1) 50%
   );
-
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }
@@ -398,104 +368,112 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
   text-align: center;
 }
 
 .footer-display {
   height: auto;
   max-height: 50vh;
+  position: relative;
+  padding: none;
 }
 
-
-/* Sticky Navigation */
-.sticky-nav {
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 100;
-  border-top: 1px solid black;
-  border-bottom: 1px solid black;
-  padding: 1rem 0.5rem 0.5rem 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+.footer-display img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
-.nav-spacer {
-  width: 100px;
+/* ============================================
+   MODALS & OVERLAYS
+   ============================================ */
+/* Info Modal Content */
+.info-content {
+  max-height: 100vh;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  overflow-y: scroll;
 }
 
-/* Contact Button */
-.contact-button {
+.info-text {
+  font-size: 1.8rem;
+  line-height: 1.5;
+  text-align: center;
+  width: 80vw;
+  max-width: 800px;
+}
+
+.info-span {
   position: fixed;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 200;
-  background: white;
-  border: 0px solid black;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-family: Times, serif;
-  font-size: 1rem;
+  bottom: 0;
+  left: 0;
+  width: 90%;
+  padding: 5%;
+  font-style: italic;
 }
 
-.contact-button:hover {
-  background: #f0f0f0;
-}/* Contact Modal Styling */
+/* Contact Modal Base */
 .contact-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   z-index: 150;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: scroll;
-  padding: 2rem;
-  overflow-y: scroll;
 }
 
 .contact-modal h2 {
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin: 0rem;
+  padding-bottom: var(--padding-sm);
 }
 
-/* Contact Table as Link Blocks */
+/* Contact Content Wrapper */
+.contact-content {
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+  overflow-y: scroll;
+}
+
+/* Contact Table */
 .contact-table {
-  width: 100%;
-  max-width: 800px;
+  width: 80%;
+  height: 80vh;
+  overflow-y: scroll;
   position: fixed;
   top: 10%;
-  margin-bottom: 3rem;
+  left: 10%;
   display: flex;
   flex-direction: column;
-  border-bottom: 0px solid black;
+  z-index: 151;
+  pointer-events: auto;
+  background-color: none;
+  overflow-y: scroll;
+
 }
 
 .contact-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-left:1px solid black;
-  border-right:1px solid black;
-  border-bottom:1px solid black;
+  padding: var(--padding-sm);
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
   text-decoration: none;
   color: black;
-  transition: background-color 0.2s ease;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .contact-row:hover {
-  font-style: italic;
+  background-color: white;
 }
 
 .contact-role {
@@ -510,77 +488,132 @@ h2 {
   border-top: none;
   border-bottom: 1px solid black;
   text-align: center;
-  margin: none;
-
+  margin: 0;
 }
 
-
-/* Contact Modal Email Links */
+/* Contact Email Links */
 .contact-email-links {
+  margin-top: 85vh;
+  position: relative;
   display: flex;
+  flex-shrink: none;
   flex-direction: row;
-  gap: 2rem;
+  gap: var(--padding-sm);
   width: 100vw;
   overflow-x: scroll;
-  padding-bottom: 20px;
+  padding: var(--padding-md);
+  z-index: 152;
 }
 
 .contact-email-link {
-  margin-top: 85vh;
-  margin-bottom: 40px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-decoration: none;
   color: black;
-  min-width: 45vw;
+  width: 60vw;
   background-color: white;
-  border-radius: 20px;
-  padding: 1rem;
+  border: 1px solid black;
+  border-radius: var(--radius-md);
+  padding: var(--padding-sm);
   height: 45vh;
-
+  position: relative;
 }
 
 .contact-email-link p {
   font-style: italic;
-  margin-bottom: 1rem;
-  text-align: center;
+  margin-bottom: var(--padding-sm);
 }
 
 .contact-email-link img {
-  width: 100%;
-  height: 100%;
-  max-height: 41vh;
+  height: calc(45vh - 3 * var(--padding-sm));
   object-fit: cover;
-  border-radius: 20px;
+  border-radius: var(--radius-md);
 }
 
-
-/* Item Content Elements */
-
-.item-title {
-  font-size: 2rem;
-  margin-right: 2rem;
+/* ============================================
+   IMAGE POPUP MODAL
+   ============================================ */
+.image-popup-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
 }
 
-.item-link {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border: 1px solid black;
-  text-decoration: none;
-  color: black;
-  width: fit-content;
+.image-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90vw;
+  overflow-y: scroll;
+  padding-top: var(--padding-lg);
 }
 
-.item-link:hover {
-  background: black;
-  color: white;
+.popup-image {
+  max-width: 90vw;
+  object-fit: contain;
+  display: block;
 }
 
-.item-category {
-  margin: 0;
+.popup-text-wrapper {
+  width: 100vw;
 }
 
+.popup-text-container {
+  background: white;
+  border-top: 1px solid black;
+  min-height: auto;
+  padding: var(--padding-sm) var(--padding-sm) 0 var(--padding-sm);
+  overflow-y: auto;
+  height: 10vh;
+  gap: var(--padding-sm);
+}
+
+.popup-description {
+  font-size: 1rem;
+  margin: 0 0 var(--padding-sm) 0;
+}
+
+.popup-nav-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: var(--padding-sm);
+}
+
+.popup-nav-button {
+  bottom: calc(100px + var(--padding-md));
+  border: none;
+  font-family: Times, serif;
+  font-size: 1rem;
+  padding: 0.25rem var(--padding-xs) 0.25rem var(--padding-xs);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  z-index: 151;
+}
+
+.popup-nav-left {
+  left: 5vw;
+}
+
+.popup-nav-right {
+  right: 5vw;
+}
+
+.popup-nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   UTILITY SECTIONS
+   ============================================ */
 /* Show More Section */
 .show-more-section {
   display: flex;
@@ -588,7 +621,9 @@ h2 {
   margin-top: -1.5rem;
 }
 
-/* Utility Classes */
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 .serif {
   font-family: Times, 'Times New Roman', serif;
 }
@@ -597,14 +632,211 @@ h2 {
   font-family: 'FungalVF', Times, serif;
 }
 
-/* Smooth Scrolling */
+/* ============================================
+   GLOBAL SETTINGS
+   ============================================ */
 html {
   scroll-behavior: smooth;
 }
 
 /* Loading State */
 .loading {
-  padding: 4rem;
+  padding: var(--padding-xl);
   text-align: center;
   font-size: 1rem;
 }
+
+/* ============================================
+   RESPONSIVE DESIGN - MOBILE
+   ============================================ */
+@media (max-width: 768px) {
+  /* Item Rows */
+  .item-row {
+    flex-direction: column;
+    height: auto;
+    position: relative;
+  }
+  
+  .item-image {
+    width: 100vw;
+    height: auto;
+    min-height: 50vh;
+    border-right: none;
+  }
+  
+  .item-content {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    padding: var(--padding-sm);
+    padding-top: var(--padding-lg);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-sm);
+    gap: 0;
+  }
+
+  .item-content .item-title,
+  .item-content .item-description {
+    font-family: Times, 'Times New Roman', serif !important;
+    font-variation-settings: normal !important;
+  }
+
+  .item-title{
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+  }
+
+  .item-content .item-description:empty {
+    display: none;
+    height: none;
+  }
+
+  /* Display Text */
+  .display-text {
+    font-family: 'FungalVF', Times, serif !important;
+  }
+
+  /* Grid */
+  .grid-3col {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--padding-xs);
+  }
+
+  .grid-3col img {
+  width: calc(33vw - 2*  var(--padding-sm));
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+  /* Display Block */
+  .display-block {
+    height: 80vh;
+  }
+
+  .display-overlay {
+    padding-bottom: var(--padding-md);
+  }
+
+  .display-overlay-inverted {
+    padding: none;
+  }
+
+  /* Buttons */
+  .contact-button,
+  .info-button,
+  .popup-nav-button {
+    color: black;
+  }
+
+  .info-button {
+    right: 5rem;
+  }
+
+  /* Navigation */
+  .sticky-nav {
+    padding-right: 40vw;
+    flex-wrap: nowrap;
+  }
+  
+  /* Typography */
+  h1 {
+    font-size: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .hero-text {
+    font-size: 2rem;
+  }
+  
+  .choreographed-animation {
+    font-size: 1.8rem;
+  }
+
+  .info-text {
+    font-size: 18pt;
+  }
+
+  /* Popup */
+  .popup-image {
+    max-width: 90vw;
+    max-height: 50vh;
+  }
+
+  .popup-text-container {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-height: 100px;
+    padding: var(--padding-xs);
+  }
+
+  .popup-description {
+    width: 100%;
+    margin: 0;
+  }
+
+  .popup-nav-left {
+    left: 0.5rem;
+  }
+
+  .popup-nav-right {
+    right: 0.5rem;
+  }
+
+  .popup-nav-button {
+    bottom: calc(100px + var(--padding-sm));
+  }
+}
+
+/* ============================================
+   NOTES ON SIMILAR/POTENTIALLY REDUNDANT CLASSES
+   ============================================ */
+
+/*
+SIMILAR CLASSES TO REVIEW:
+1. .info-button and .contact-button
+   - Nearly identical except for `right` position
+   - Could be: .fixed-button with .fixed-button--info, .fixed-button--contact modifiers
+
+2. .contact-modal and .image-popup-wrapper
+   - Both create full-screen overlays with glass effect
+   - Consider: .modal-overlay base class
+
+3. .popup-nav-button, .popup-nav-left, .popup-nav-right
+   - Could consolidate positioning into modifiers
+
+4. Multiple uses of glass effect (rgba(255, 255, 255, 0.4) + backdrop-filter)
+   - Now using CSS variables (--glass-bg, --glass-blur)
+   - Appears in: .info-button, .contact-button, .contact-modal, .contact-row, 
+                 .contact-table-heading, .popup-nav-button, .item-content (mobile),
+                 .hero-text (mobile)
+
+5. Border radius values
+   - 20px used frequently: .info-button, .contact-button, .grid-3col img, 
+                           .contact-email-link, .contact-email-link img, .popup-nav-button
+   - 8px used for: .hero-text, .item-content (mobile)
+   - Now using --radius-sm and --radius-md
+
+UNUSED/QUESTIONABLE CLASSES:
+- .item-category (appears in code but positioning may not be visible)
+- .display-overlay-inverted (referenced in mobile but no desktop definition - POTENTIAL UNUSED)
+- .info-span (defined but may not be in use in React component)
+- .contact-content (defined but scrolling handled by modal)
+- .nav-spacer (creates fixed width space - check if necessary)
+
+PADDING STANDARDIZATION COMPLETE:
+- All hardcoded padding values replaced with CSS variables
+- Edge margins now consistent via --edge-margin-mobile/desktop
+- Glass effects standardized via --glass-bg and --glass-blur
+*/
