@@ -2,7 +2,7 @@
   "name": "9413-sophia-site",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://9413sophia.github.io/9413",
+  "homepage": "https://9413sophia.com",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
