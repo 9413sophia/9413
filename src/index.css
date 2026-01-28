@@ -270,8 +270,6 @@ button {
   font-style: italic;
 }
 
-/* NOTE: info-button and contact-button are NEARLY IDENTICAL except for position.
-   Consider consolidating into .fixed-button with modifiers */
 
 /* ============================================
    GRID LAYOUT
@@ -526,6 +524,7 @@ button {
 }
 
 .contact-email-link img {
+  max-width: calc(60vw - 2 * var(--padding-sm));
   height: calc(45vh - 3 * var(--padding-sm));
   object-fit: cover;
   border-radius: var(--radius-md);

@@ -504,7 +504,7 @@ const SophiaAvenue = () => {
 
       {contactOpen && (
         <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
-           <div className="contact-spacer"></div> 
+          <div className="contact-content">
            <div className="contact-table">
              <h2 className="contact-table-heading">Contact the Project Team</h2>
              <a href="https://malenagrigoli.com/9413sophia.html" className="contact-row">
@@ -567,6 +567,7 @@ const SophiaAvenue = () => {
                  <img src={block.img} alt={block.heading} />
                </a>
              ))}
+           </div>
            </div>
         </div>
       )}
