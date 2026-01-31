@@ -22,6 +22,63 @@
   --glass-blur: blur(40px);
 }
 
+/* scroll bar fix */
+/* Remove all scrollbars globally */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Ensure body and html have no scrollbars */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove scrollbars from modals and popups */
+.contact-modal,
+.info-content,
+.contact-content,
+.image-popup-wrapper,
+.image-popup {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.contact-modal::-webkit-scrollbar,
+.info-content::-webkit-scrollbar,
+.contact-content::-webkit-scrollbar,
+.image-popup-wrapper::-webkit-scrollbar,
+.image-popup::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove scrollbars from any overflow containers */
+.item-row,
+.item-content,
+.display-block,
+.grid-3col {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.item-row::-webkit-scrollbar,
+.item-content::-webkit-scrollbar,
+.display-block::-webkit-scrollbar,
+.grid-3col::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    FUNGAL VF FONT
    ============================================ */

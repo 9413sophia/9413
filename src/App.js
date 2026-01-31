@@ -9,16 +9,16 @@ import contact3 from './images/contact-3.jpg';
 const arena = new Arena();
 
 const CHANNEL_SLUGS = {
-  publication: '9413-sophia-ave-publication',
-  archive: '9413-sophia-ave-archive',
-  film: '9413-sophia-ave-film',
+  publications: 'publications-hoc7ciafzuq',
+  archive: 'archive-4kwdmkcfu_y',
+  film: 'film-0iexlngxoz0',
 };
 
 const SophiaAvenue = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [contactOpen, setContactOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const [blocks, setBlocks] = useState({ publication: [], archive: [], film: [] });
+  const [blocks, setBlocks] = useState({ publications: [], archive: [], film: [] });
   const [loading, setLoading] = useState(true);
   const [showMoreCount, setShowMoreCount] = useState(20);
   const [expandedImageIndex, setExpandedImageIndex] = useState(null);
@@ -53,7 +53,7 @@ const SophiaAvenue = () => {
       if (isInitial) setLoading(true);
 
       const results = await Promise.all([
-        fetchChannel('publication', CHANNEL_SLUGS.publication),
+        fetchChannel('publications', CHANNEL_SLUGS.publications),
         fetchChannel('archive', CHANNEL_SLUGS.archive),
         fetchChannel('film', CHANNEL_SLUGS.film)
       ]);
@@ -204,17 +204,17 @@ const SophiaAvenue = () => {
     if (activeCategory === 'all') {
       return (
         <>
-          The 9413 Sophia Avenue Project is a{' '}
+          9413 Sophia Avenue is a {' '}
           <span className="choreographed-animation">choreographed deconstruction</span>
-          {' '}of the built environment
+          {' '} of the built environment
         </>
       );
     }
     
     const texts = {
-      publication: 'The publication shows the dedication to the project and its content',
-      film: 'A film about the performance is being made',
-      archive: 'The archive of the choreographed deconstruction is living'
+      publications: 'Publication collecting images, documents, and writing related to 9413 Sophia Ave',
+      film: 'Film illustrating the deconstruction and context of 9413 Sophia Ave',
+      archive: 'Archive of additional images related to 9413 Sophia Ave'
     };
     return texts[activeCategory];
   };
@@ -234,7 +234,9 @@ const SophiaAvenue = () => {
       return getAllBlocks();
     }
     const categoryBlocks = blocks[activeCategory]?.map(block => ({ ...block, category: activeCategory })) || [];
-    return [...categoryBlocks].reverse();
+    const reversed = [...categoryBlocks].reverse();
+    // Remove the first block (which is used in the hero) from the feed
+    return reversed.slice(1);
   };
 
   const getFirstPerCategory = () => {
@@ -249,7 +251,10 @@ const SophiaAvenue = () => {
 
   const getFirstBlock = () => {
     if (activeCategory === 'all') return null;
-    return blocks[activeCategory]?.[0] || null;
+    const categoryBlocks = blocks[activeCategory];
+    if (!categoryBlocks || !categoryBlocks.length) return null;
+    // Return the last block since getCurrentBlocks reverses the array
+    return categoryBlocks[categoryBlocks.length - 1];
   };
 
   const displayedBlocks = getCurrentBlocks();
@@ -264,7 +269,7 @@ const SophiaAvenue = () => {
 
     const displayBlocks = getFirstPerCategory();
     const filmBlock = displayBlocks.find(b => b.category === 'film');
-    const publicationBlock = displayBlocks.find(b => b.category === 'publication');
+    const publicationBlock = displayBlocks.find(b => b.category === 'publications');
     const archiveBlock = displayBlocks.find(b => b.category === 'archive');
     
     const displayBlockIds = new Set(displayBlocks.map(b => b.id));
@@ -298,7 +303,7 @@ const SophiaAvenue = () => {
 
     const displayBlocks = getFirstPerCategory();
     const filmBlock = displayBlocks.find(b => b.category === 'film');
-    const publicationBlock = displayBlocks.find(b => b.category === 'publication');
+    const publicationBlock = displayBlocks.find(b => b.category === 'publications');
     const archiveBlock = displayBlocks.find(b => b.category === 'archive');
     
     const displayBlockIds = new Set(displayBlocks.map(b => b.id));
@@ -446,7 +451,7 @@ const SophiaAvenue = () => {
       </div>
 
       <nav className="sticky-nav">
-        {['all', 'publication', 'film', 'archive'].map(cat => (
+        {['all', 'publications', 'film', 'archive'].map(cat => (
           <p
             key={cat}
             className={`navigation-text ${activeCategory === cat ? 'active' : ''}`}
@@ -494,7 +499,7 @@ const SophiaAvenue = () => {
           <div className="info-content" onClick={(e) => e.stopPropagation()}>
             <p className="info-text">
               {addLineBreak
-                ("9413 Sophia Ave is both a Cleveland address and the title of a durational performance (Sept 2024–Sept 2025). The social practice work choreographically dismantled and biocycled a condemned house acquired through the Cuyahoga County Land Bank, turning maintenance of the built environment into art. The project culminated in a participatorily designed installation on the site.\n The performance engaged the structure life cycle as an experiment in collective maintenance and intentional neighborhood turnover, shaped through ongoing exchange with residents concerns for their community. \n Biocycling: remediating demolition waste by inoculating it with mycelium and using the resulting material to build new work"
+                ("9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025. \n Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. \n This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings. \n The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural. \n Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense. \n In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures. \n This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art."
                   )
                   }
             </p>
