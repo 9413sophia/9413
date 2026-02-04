@@ -245,7 +245,7 @@ button {
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding-top: 2.5rem;
+  padding: 2.5rem;
   gap: 1.5rem;
 }
 
@@ -528,7 +528,7 @@ button {
 }
 
 .contact-row:hover {
-  background-color: white;
+  font-style: italic;
 }
 
 .contact-role {

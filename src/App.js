@@ -212,7 +212,7 @@ const SophiaAvenue = () => {
     }
     
     const texts = {
-      publications: 'Publication collecting images, documents, and writing related to 9413 Sophia Ave',
+      publications: 'Publications collecting images documents and writing related to 9413 Sophia Ave',
       film: 'Film illustrating the deconstruction and context of 9413 Sophia Ave',
       archive: 'Archive of additional images related to 9413 Sophia Ave'
     };
@@ -559,7 +559,7 @@ const SophiaAvenue = () => {
            </div>
            <div className="contact-email-links">
              {[
-               { heading: 'Interested in carrying the book?', img: contact2 },
+               { heading: 'Interested in hosting the book?', img: contact2 },
                { heading: 'Showing the film?', img: contact1 },
                { heading: 'Scheduling a talk?', img: contact3 }
              ].map((block, idx) => (
