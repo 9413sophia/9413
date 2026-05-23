@@ -1,773 +1,551 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Arena from 'are.na';
-import './index.css';
-import footerImage from './images/footer-inverted.jpg';
-import contact1 from './images/contact-1.png';
-import contact2 from './images/contact-2.jpg';
-import contact3 from './images/contact-3.jpg';
 
-const arena = new Arena();
+// ============================================================
+// CONFIGURATION & ARE.NA CHANNEL SLUGS
+// ============================================================
+const ARCHIVE_CHANNEL = 'archive-4kwdmkcfu_y';
+const PUBS_CHANNEL = 'publications-hoc7ciafzuq';
+const FILM_CHANNEL = 'film-0iexlngxoz0';
 
-const CHANNEL_SLUGS = {
-  publications: 'publications-hoc7ciafzuq',
-  archive: 'archive-4kwdmkcfu_y',
-  film: 'film-0iexlngxoz0',
-};
-
-const SophiaAvenue = () => {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [contactOpen, setContactOpen] = useState(false);
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [blocks, setBlocks] = useState({ publications: [], archive: [], film: [] });
+export default function App() {
+  // View states: 'home' | 'film' | 'publications' | 'archive'
+  const [view, setView] = useState('home');
+  const [archiveItems, setArchiveItems] = useState([]);
+  const [pubItems, setPubItems] = useState([]);
+  const [filmItems, setFilmItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showMoreCount, setShowMoreCount] = useState(20);
-  const [expandedImageIndex, setExpandedImageIndex] = useState(null);
-  const [hoverBlock, setHoverBlock] = useState(null);
-  const [holdTimer, setHoldTimer] = useState(null);
-  const [holdBlock, setHoldBlock] = useState(null);
-  const [scrollPositions, setScrollPositions] = useState({});
-  const scrollTimeout = useRef(null);
-  const itemRefs = useRef({});
-  const POLL_INTERVAL = 120000;
 
+  // Interface states
+  const [hoveredBlock, setHoveredBlock] = useState(null);
+  const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1);
+  const [activeVideoUrl, setActiveVideoUrl] = useState(null);
+  const [isBioOpen, setIsBioOpen] = useState(false);
+  const [showEvent, setShowEvent] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+      const check = () => setIsMobile(window.innerWidth < 600);
+      check();
+      window.addEventListener('resize', check);
+      return () => window.removeEventListener('resize', check);
+    }, []);
+
+  // Canvas context refs
+  const sporeCanvasRef = useRef(null);
+  const gradientCanvasRef = useRef(null);
+  const sporesRef = useRef([]);
+  const sporeImgRef = useRef(null); 
+
+  // ============================================================
+  // DATA AND SVG INLINE PRELOADING PIPELINES
+  // ============================================================
   useEffect(() => {
-    let poller;
+    const svgMarkup = `
+    <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="14.6984" cy="14.6984" r="14.6984" fill="url(#paint0_radial_1902_4183)"/>
+    <defs>
+    <radialGradient id="paint0_radial_1902_4183" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(14.6984 14.6984) rotate(90) scale(14.6984)">
+    <stop stop-color="#D9D9D9"/>
+    <stop offset="1" stop-color="#D9D9D9" stop-opacity="0"/>
+    </radialGradient>
+    </defs>
+    </svg>
 
-    const fetchChannel = async (category, slug) => {
-      try {
-        const channel = await arena.channel(slug).get({ page: 1, per: 100 });
-        return { category, blocks: channel.contents || [] };
-      } catch (error) {
-        console.error(`Error fetching ${category} (${slug}):`, error);
-        return { category, blocks: [] };
-      }
-    };
+    `;
 
-    const hasChanged = (oldBlocks, newBlocks) => {
-      if (!oldBlocks || oldBlocks.length !== newBlocks.length) return true;
-      return oldBlocks[0]?.id !== newBlocks[0]?.id ||
-             oldBlocks[0]?.updated_at !== newBlocks[0]?.updated_at;
-    };
+    const img = new Image();
+    img.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgMarkup)}`;
+    sporeImgRef.current = img;
 
-    const fetchAllChannels = async (isInitial = false) => {
-      if (isInitial) setLoading(true);
+    const fetchChannel = (id) => 
+      fetch(`https://api.are.na/v2/channels/${id}/contents?per=50`)
+        .then(res => res.json())
+        .then(data => data.contents || []);
 
-      const results = await Promise.all([
-        fetchChannel('publications', CHANNEL_SLUGS.publications),
-        fetchChannel('archive', CHANNEL_SLUGS.archive),
-        fetchChannel('film', CHANNEL_SLUGS.film)
-      ]);
-
-      setBlocks(prev => {
-        const updated = { ...prev };
-        let didUpdate = false;
-
-        results.forEach(({ category, blocks }) => {
-          if (hasChanged(prev[category], blocks)) {
-            updated[category] = blocks;
-            didUpdate = true;
-          }
-        });
-
-        return didUpdate ? updated : prev;
+    Promise.all([
+      fetchChannel(ARCHIVE_CHANNEL), 
+      fetchChannel(PUBS_CHANNEL),
+      fetchChannel(FILM_CHANNEL)
+    ])
+      .then(([archive, pubs, film]) => {
+        setArchiveItems(archive);
+        setPubItems(pubs);
+        setFilmItems(film);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Are.na pull failed:", err);
+        setLoading(false);
       });
-
-      if (isInitial) setLoading(false);
-    };
-
-    fetchAllChannels(true);
-    poller = setInterval(() => {
-      fetchAllChannels(false);
-    }, POLL_INTERVAL);
-
-    return () => clearInterval(poller);
   }, []);
 
-  useEffect(() => {
-    if (contactOpen || infoOpen || expandedImageIndex !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [contactOpen, infoOpen, expandedImageIndex]);
-
-  // Scroll-based animation for variable fonts
-  useEffect(() => {
-    const updateFungalStyles = () => {
-      const viewportHeight = window.innerHeight;
-      const scrollTop = window.scrollY;
-      const viewportTop = scrollTop;
-
-      const newPositions = {};
-
-      Object.keys(itemRefs.current).forEach(key => {
-        const element = itemRefs.current[key];
-        if (!element) return;
-
-        const rect = element.getBoundingClientRect();
-        const elementTop = rect.top + scrollTop;
-        const elementMiddle = elementTop + (rect.height / 2);
-
-        // Calculate distance from element middle to viewport top
-        const distanceFromTop = elementMiddle - viewportTop;
-
-        // Define animation range (in pixels)
-        // Animation happens across the full viewport height
-        const animationStart = viewportHeight; // Element at bottom of viewport (0%)
-        const animationEnd = 0; // Element at top of viewport (100%)
-
-        // Calculate progress (0 = bottom of viewport, 1 = top of viewport)
-        let progress = 0;
-        if (distanceFromTop >= animationStart) {
-          progress = 0; // Below viewport / at bottom - 0%
-        } else if (distanceFromTop <= animationEnd) {
-          progress = 1; // At top of viewport - 100%
-        } else {
-          // In between - interpolate from bottom (0) to top (1)
-          progress = 1 - (distanceFromTop / animationStart);
-        }
-
-        // Ease the transition (optional - creates smoother animation)
-        const easedProgress = easeInOutCubic(progress);
-
-        // Convert to percentage (0-100)
-        const percentage = easedProgress * 100;
-
-        // Keyframe-style animation with independent grow and thick
-        // 0% = bottom of viewport, 100% = top of viewport
-        let grow, thick;
-
-        if (percentage <= 20) {
-          // 0-20% (bottom 20% of viewport): grow=1000, thick=300
-          grow = 1000;
-          thick = 300;
-        } else if (percentage <= 70) {
-          // 20-70%: grow=100, thick=100
-          const localProgress = (percentage - 20) / 50; // 0-1 within this range
-          grow = 1000 - (localProgress * 900); // 1000 -> 100
-          thick = 300 - (localProgress * 200);  // 300 -> 100
-        } else if (percentage <= 90) {
-          // 70-90%: grow=700, thick=200
-          const localProgress = (percentage - 70) / 20; // 0-1 within this range
-          grow = 100 + (localProgress * 200);  // 100 -> 300
-          thick = 100 + (localProgress * 100); // 100 -> 200
-        } else {
-          // 90-100% (top 10% of viewport): grow=1000, thick=1000
-          const localProgress = (percentage - 90) / 10; // 0-1 within this range
-          grow = 600 + (localProgress * 200);  // 300 -> 1000
-          thick = 200 + (localProgress * 800); // 200 -> 1000
-        }
-
-        newPositions[key] = { 
-          grow: Math.round(grow), 
-          thick: Math.round(thick) 
-        };
-      });
-
-      setScrollPositions(newPositions);
-    };
-
-    // Easing function for smoother transitions
-    const easeInOutCubic = (t) => {
-      return t < 0.5 
-        ? 4 * t * t * t 
-        : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
-
-    const handleScroll = () => {
-      if (scrollTimeout.current) {
-        cancelAnimationFrame(scrollTimeout.current);
-      }
-      
-      scrollTimeout.current = requestAnimationFrame(updateFungalStyles);
-    };
-
-    // Initial update
-    updateFungalStyles();
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', updateFungalStyles);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', updateFungalStyles);
-      if (scrollTimeout.current) {
-        cancelAnimationFrame(scrollTimeout.current);
-      }
-    };
-  }, [blocks, activeCategory, showMoreCount]);
-
-  const getHeroText = () => {
-    if (activeCategory === 'all') {
-      return (
-        <>
-          9413 Sophia Avenue is a {' '}
-          <span className="choreographed-animation">choreographed deconstruction</span>
-          {' '} of the built environment
-        </>
-      );
-    }
-    
-    const texts = {
-      publications: 'Publications collecting images documents and writing related to 9413 Sophia Ave',
-      film: 'Film illustrating the deconstruction and context of 9413 Sophia Ave',
-      archive: 'Archive of additional images related to 9413 Sophia Ave'
-    };
-    return texts[activeCategory];
-  };
-
-  const getAllBlocks = () => {
-    const allBlocks = [];
-    Object.keys(blocks).forEach(category => {
-      blocks[category].forEach(block => {
-        allBlocks.push({ ...block, category });
-      });
-    });
-    return allBlocks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  };
-
-  const getCurrentBlocks = () => {
-    if (activeCategory === 'all') {
-      return getAllBlocks();
-    }
-    const categoryBlocks = blocks[activeCategory]?.map(block => ({ ...block, category: activeCategory })) || [];
-    const reversed = [...categoryBlocks].reverse();
-    // Remove the first block (which is used in the hero) from the feed
-    return reversed.slice(1);
-  };
-
-  const getFirstPerCategory = () => {
-    return Object.keys(blocks)
-      .map(category => {
-        const categoryBlocks = blocks[category];
-        if (!categoryBlocks || !categoryBlocks.length) return null;
-        return { ...categoryBlocks[0], category };
-      })
-      .filter(Boolean);
-  };
-
-  const getFirstBlock = () => {
-    if (activeCategory === 'all') return null;
-    const categoryBlocks = blocks[activeCategory];
-    if (!categoryBlocks || !categoryBlocks.length) return null;
-    // Return the last block since getCurrentBlocks reverses the array
-    return categoryBlocks[categoryBlocks.length - 1];
-  };
-
-  const displayedBlocks = getCurrentBlocks();
-  const visibleBlocks = activeCategory === 'all' ? displayedBlocks.slice(0, showMoreCount) : displayedBlocks;
-  
-  // NEW: Returns ALL blocks for gallery navigation (including ones without titles)
-  const getAllBlocksForGallery = () => {
-    if (activeCategory !== 'all') {
-      // Include ALL blocks for gallery navigation
-      return visibleBlocks;
-    }
-
-    const displayBlocks = getFirstPerCategory();
-    const filmBlock = displayBlocks.find(b => b.category === 'film');
-    const publicationBlock = displayBlocks.find(b => b.category === 'publications');
-    const archiveBlock = displayBlocks.find(b => b.category === 'archive');
-    
-    const displayBlockIds = new Set(displayBlocks.map(b => b.id));
-    const regularBlocks = visibleBlocks.filter(block => 
-      !displayBlockIds.has(block.id) && (block.title || block.description)
-    );
-
-    const ordered = [];
-    regularBlocks.forEach((block, idx) => {
-      ordered.push(block);
-      
-      if (idx === 1 && filmBlock) {
-        ordered.push({ ...filmBlock, isDisplay: true });
-      }
-      if (idx === 5 && publicationBlock) {
-        ordered.push({ ...publicationBlock, isDisplay: true });
-      }
-      if (idx === 7 && archiveBlock) {
-        ordered.push({ ...archiveBlock, isDisplay: true });
-      }
-    });
-
-    return ordered;
-  };
-
-  // NEW: Separate function for blocks to display in main view (only with titles)
-  const getOrderedBlocks = () => {
-    if (activeCategory !== 'all') {
-      return visibleBlocks.filter(block => block.title || block.description);
-    }
-
-    const displayBlocks = getFirstPerCategory();
-    const filmBlock = displayBlocks.find(b => b.category === 'film');
-    const publicationBlock = displayBlocks.find(b => b.category === 'publications');
-    const archiveBlock = displayBlocks.find(b => b.category === 'archive');
-    
-    const displayBlockIds = new Set(displayBlocks.map(b => b.id));
-    const regularBlocks = visibleBlocks.filter(block => 
-      !displayBlockIds.has(block.id) && (block.title || block.description)
-    );
-
-    const ordered = [];
-    regularBlocks.forEach((block, idx) => {
-      ordered.push(block);
-      
-      if (idx === 1 && filmBlock) {
-        ordered.push({ ...filmBlock, isDisplay: true });
-      }
-      if (idx === 5 && publicationBlock) {
-        ordered.push({ ...publicationBlock, isDisplay: true });
-      }
-      if (idx === 7 && archiveBlock) {
-        ordered.push({ ...archiveBlock, isDisplay: true });
-      }
-    });
-
-    return ordered;
-  };
-
-  const blocksWithTitles = getOrderedBlocks();
-  const allGalleryBlocks = getAllBlocksForGallery(); // NEW: All blocks for gallery
-  const blocksWithoutTitles = visibleBlocks.filter(block => !block.title && !block.description);
-  const firstBlock = getFirstBlock();
-
-  // Keyboard navigation for gallery and modals
+  // Global Cross-Page Keyboard Triggers
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Escape key - close any open modal
-      if (e.key === 'Escape') {
-        handleCloseModals();
-      }
-      
-      // Arrow keys - only work when gallery is open
-      if (expandedImageIndex !== null) {
-        if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          handleNextImage();
-        } else if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          handlePrevImage();
-        }
+      if (activeLightboxIndex === -1) return;
+      const currentItems = view === 'archive' ? archiveItems : view === 'publications' ? pubItems : filmItems;
+      if (!currentItems.length) return;
+
+      if (e.key === 'ArrowRight') {
+        setActiveLightboxIndex((prev) => (prev + 1) % currentItems.length);
+      } else if (e.key === 'ArrowLeft') {
+        setActiveLightboxIndex((prev) => (prev - 1 + currentItems.length) % currentItems.length);
+      } else if (e.key === 'Escape') {
+        setActiveLightboxIndex(-1);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-    
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeLightboxIndex, archiveItems, pubItems, filmItems, view]);
+
+  // Reset hovered element state on tab route shift to prevent ghost layouts
+  useEffect(() => {
+    setHoveredBlock(null);
+  }, [view]);
+
+  // ============================================================
+  // CANVAS SPORE VECTOR GRAPHICS RENDER ENGINE
+  // ============================================================
+  useEffect(() => {
+    if (view !== 'home' || loading || !sporeCanvasRef.current) return;
+
+    const canvas = sporeCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    sporesRef.current = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.9,
+      vy: (Math.random() - 0.5) * 0.9,
+      size: 50, 
+      isHovered: false,
+      blockData: archiveItems[i] || null
+    }));
+
+    const renderLoop = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      sporesRef.current.forEach((spore) => {
+        if (!spore.isHovered) {
+          spore.x += spore.vx;
+          spore.y += spore.vy;
+
+          if (spore.x < 0 || spore.x > canvas.width) spore.vx *= -1;
+          if (spore.y < 0 || spore.y > canvas.height) spore.vy *= -1;
+        }
+
+        if (sporeImgRef.current && sporeImgRef.current.complete) {
+          ctx.drawImage(
+            sporeImgRef.current,
+            spore.x - spore.size / 2,
+            spore.y - spore.size / 2,
+            spore.size,
+            spore.size
+          );
+        } else {
+          ctx.beginPath();
+          ctx.arc(spore.x, spore.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#D9D9D9';
+          ctx.fill();
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(renderLoop);
+    };
+    renderLoop();
+
+    const handleMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let matchFound = null;
+
+      sporesRef.current.forEach((spore) => {
+        const dist = Math.hypot(spore.x - mx, spore.y - my);
+        if (dist < 45) { 
+          spore.isHovered = true;
+          matchFound = spore.blockData;
+        } else {
+          spore.isHovered = false;
+        }
+      });
+      setHoveredBlock(matchFound);
+    };
+
+    const handleMouseLeave = () => {
+      sporesRef.current.forEach(s => s.isHovered = false);
+      setHoveredBlock(null);
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', resizeCanvas);
+      if (canvas) {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseleave', handleMouseLeave);
+      }
     };
-  }, [expandedImageIndex, contactOpen, infoOpen, allGalleryBlocks.length]);
-  
-  const getImageUrl = (block) => {
-    if (block.image?.display?.url) return block.image.display.url;
-    if (block.image?.original?.url) return block.image.original.url;
-    return null;
-  };
+  }, [view, loading, archiveItems]);
 
-  const getFungalStyle = (key) => {
-    const position = scrollPositions[key];
-    
-    let grow = 1000; // Default to max fungal
-    let thick = 1000;
-    
-    if (position) {
-      grow = position.grow;
-      thick = position.thick;
-    }
-    
-    return {
-      fontFamily: 'FungalVF, Times, serif',
-      fontVariationSettings: `"grow" ${grow}, "THCK" ${thick}`,
-      '--fungal-grow': grow,
-      '--fungal-thick': thick,
-      transition: 'font-variation-settings 0.15s ease-out'
+  // ============================================================
+  // MUSHROOM RADIAL INFO GRADIENT LAYER
+  // ============================================================
+  useEffect(() => {
+    if (!gradientCanvasRef.current) return;
+    const canvas = gradientCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    let time = 0;
+
+    const drawGradient = () => {
+      time += 0.02;
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const pulseFactor = Math.sin(time) * 16;
+      const radius = Math.min(w, h) * 0.8 + pulseFactor;
+
+      let grad = ctx.createRadialGradient(w, h, 0, w, h, radius);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+      grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.95)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      animId = requestAnimationFrame(drawGradient);
     };
-  };
 
-  const handleNextImage = () => {
-    if (expandedImageIndex < allGalleryBlocks.length - 1) {
-      setExpandedImageIndex(expandedImageIndex + 1);
+    drawGradient();
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Helper utility to safely construct structural modern iframe paths
+  const launchVideoTarget = (item) => {
+    const rawUrl = item.source?.url || item.attachment?.url;
+    if (!rawUrl) return;
+
+    if (rawUrl.includes('youtube.com/watch')) {
+      const urlObj = new URL(rawUrl);
+      const vParam = urlObj.searchParams.get('v');
+      if (vParam) {
+        setActiveVideoUrl(`https://www.youtube.com/embed/${vParam}?autoplay=1`);
+        return;
+      }
     }
-  };
-
-  const handlePrevImage = () => {
-    if (expandedImageIndex > 0) {
-      setExpandedImageIndex(expandedImageIndex - 1);
+    if (rawUrl.includes('youtu.be/')) {
+      const id = rawUrl.split('youtu.be/')[1]?.split(/[?#]/)[0];
+      if (id) {
+        setActiveVideoUrl(`https://www.youtube.com/embed/${id}?autoplay=1`);
+        return;
+      }
     }
-  };
-
-  const handleCloseModals = () => {
-    setContactOpen(false);
-    setInfoOpen(false);
-    setExpandedImageIndex(null);
-  };
-
-  const handleTouchStart = (blockId, idx) => {
-    const timer = setTimeout(() => {
-      setHoldBlock(`${blockId}-${idx}`);
-    }, 1500);
-    setHoldTimer(timer);
-  };
-
-  const handleTouchEnd = () => {
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      setHoldTimer(null);
+    if (rawUrl.includes('vimeo.com/')) {
+      const id = rawUrl.split('vimeo.com/')[1]?.split(/[?#]/)[0];
+      if (id) {
+        setActiveVideoUrl(`https://player.vimeo.com/video/${id}?autoplay=1`);
+        return;
+      }
     }
-    setHoldBlock(null);
+    setActiveVideoUrl(rawUrl);
   };
 
-  // Source - https://stackoverflow.com/a
-  // Posted by Ido Cohen, modified by community. See post 'Timeline' for change history
-  // Retrieved 2026-01-27, License - CC BY-SA 4.0
-  const addLineBreak = (str) =>
-  str.split('\n').map((subStr, index) => {
-    return (
-      <React.Fragment key={index}>
-        {subStr}
-        <br />
-        <br />
-      </React.Fragment>
-    );
-  });
+  if (loading) return <div className="loading-screen">9413 sophia ave</div>;
 
-  const currentExpandedBlock = expandedImageIndex !== null ? allGalleryBlocks[expandedImageIndex] : null;
+  // Track down current metadata target relative to cross-page view types
+  const currentActiveBlock = activeLightboxIndex !== -1 
+    ? (view === 'archive' ? archiveItems[activeLightboxIndex] : view === 'publications' ? pubItems[activeLightboxIndex] : filmItems[activeLightboxIndex])
+    : hoveredBlock;
 
   return (
-    <div className="serif">
-      <div className="hero-section">
-        <p className="hero-text">{getHeroText()}</p>
-        <div
-          className="hero-bg"
-          style={
-            activeCategory !== 'all' && firstBlock
-              ? { backgroundImage: `url(${getImageUrl(firstBlock)})` }
-              : undefined
-          }
-        />
-      </div>
+    <div className="app-container" style={{
+      backgroundImage: (view === 'home' && hoveredBlock?.image?.display?.url) ? `url(${hoveredBlock.image.display.url})` : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }}>
+      
+      {/* GLOBAL TOP NAV SYSTEM */}
+      <nav className="nav">
+        <div className="nav-sentence">
+          9413 Sophia Ave is a choreographed deconstruction of the built environment{' '}
+          <span className="info-read-toggle" onClick={() => { setView('home'); setIsBioOpen(!isBioOpen); }}>
+            {isBioOpen ? '(Close)' : '(Read More)'}
+          </span>
+        </div>
 
-      <nav className="sticky-nav">
-        {['all', 'publications', 'film', 'archive'].map(cat => (
-          <p
-            key={cat}
-            className={`navigation-text ${activeCategory === cat ? 'active' : ''}`}
-            onClick={() => {
-              setActiveCategory(cat);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </p>
-        ))}
-        <div className="nav-spacer"></div>
+        <button className="nav-arrow" onClick={() => {
+          const routes = ['home', 'film', 'publications', 'archive'];
+          const nextIdx = (routes.indexOf(view) + 1) % routes.length;
+          setView(routes[nextIdx]);
+          setIsBioOpen(false);
+        }}>
+          <span>See {view === 'home' ? 'Film' : view === 'film' ? 'Publications' : view === 'publications' ? 'Archive' : 'Home'}</span>
+          <svg width="65" height="30" viewBox="0 0 65 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 14.6485H63.8286M49.5336 28.9435L63.8286 14.6485L49.5336 0.353516" stroke="black"/>
+          </svg>
+        </button>
       </nav>
 
-      {!contactOpen && !infoOpen && expandedImageIndex === null && (
-        <>
-          <button 
-            onClick={() => {
-              setInfoOpen(true);
-              setTimeout(() => {
-                const infoContent = document.querySelector('.info-content');
-                if (infoContent) {
-                  infoContent.scrollTop = 0;
-                }
-              }, 100);
-            }} 
-            className="info-button"
-          >
-            Info
-          </button>
-          <button onClick={() => setContactOpen(true)} className="contact-button">
-            Contact
-          </button>
-        </>
-      )}
-
-      {(contactOpen || infoOpen || expandedImageIndex !== null) && (
-        <button onClick={handleCloseModals} className="contact-button">
-          Exit
-        </button>
-      )}
-
-      {infoOpen && (
-        <div className="contact-modal">
-          <div className="info-content" onClick={(e) => e.stopPropagation()}>
-            <p className="info-text">
-              {addLineBreak
-                ("9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025. \n Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. \n This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings. \n The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural. \n Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense. \n In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures. \n This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art."
-                  )
-                  }
-            </p>
-          </div>
-        </div>
-      )}
-
-      {contactOpen && (
-        <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="contact-content">
-           <div className="contact-table">
-             <h2 className="contact-table-heading">Contact the Project Team</h2>
-             <a href="https://malenagrigoli.com/9413sophia.html" className="contact-row">
-               <span className="contact-role">Project Lead</span>
-               <span className="contact-name">Malena Grigoli</span>
-             </a>
-             <a href="https://colinmartinez.xyz/9413-sophia-avenue-gallery" className="contact-row">
-               <span className="contact-role">Photographer</span>
-               <span className="contact-name">Colin Martinez</span>
-             </a>
-             <a href="https://cjcontractorsco.com/" className="contact-row">
-               <span className="contact-role">Demolition</span>
-               <span className="contact-name">C&J Contractors</span>
-             </a>
-             <a href="https://www.redhousearchitecture.org/" className="contact-row">
-               <span className="contact-role">Institutional Partner</span>
-               <span className="contact-name">redhouse studio</span>
-             </a>
-             <a href="https://blurry-pictures.com/work" className="contact-row">
-               <span className="contact-role">Videography</span>
-               <span className="contact-name">Blurry Pictures</span>
-             </a>
-             <a href="https://www.facebook.com/groups/90189049894/" className="contact-row">
-               <span className="contact-role">Lead Contamination Consulting</span>
-               <span className="contact-name">Robin Brown</span>
-             </a>
-             <a href="https://mygrowconnect.org/" className="contact-row">
-               <span className="contact-role">Lead Field Agronomist</span>
-               <span className="contact-name">Jennifer Lumpkin</span>
-             </a>
-             <a href="https://www.instagram.com/indigo.bishop/" className="contact-row">
-               <span className="contact-role">Community Organizing</span>
-               <span className="contact-name">Indigo Bishop</span>
-             </a>
-             <a href="https://cuyahogalandbank.org/" className="contact-row">
-               <span className="contact-role">Project Partner</span>
-               <span className="contact-name">Cuyahoga Land Bank</span>
-             </a>
-             <a href="https://www.clevelandohio.gov/city-hall/office-mayor/taf" className="contact-row">
-               <span className="contact-role">Funding</span>
-               <span className="contact-name">Cleveland Transformative Arts Fund</span>
-             </a>
-             <a href="https://harperdaniel.com" className="contact-row">
-               <span className="contact-role">Branding and Website</span>
-               <span className="contact-name">Harper Daniel</span>
-             </a>
-           </div>
-           <div className="contact-email-links">
-             {[
-               { heading: 'Interested in hosting the book?', img: contact2 },
-               { heading: 'Showing the film?', img: contact1 },
-               { heading: 'Scheduling a talk?', img: contact3 }
-             ].map((block, idx) => (
-               <a 
-                 key={idx}
-                 href="mailto:contact@9413sophia.com"
-                 className="contact-email-link"
-               >
-                 <p>{block.heading}</p>
-                 <img src={block.img} alt={block.heading} />
-               </a>
-             ))}
-           </div>
-           </div>
-        </div>
-      )}
-
-      {expandedImageIndex !== null && currentExpandedBlock && (
-        <div className="contact-modal">
-          <div className="image-popup-wrapper">
-            <div className="image-popup" onClick={(e) => e.stopPropagation()}>
-              <img 
-                src={getImageUrl(currentExpandedBlock)} 
-                alt={currentExpandedBlock.title || 'Expanded'} 
-                className="popup-image"
-              />
-            </div>
-              <div className="popup-text-wrapper">
-                <div className="popup-nav-container">
-                   <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePrevImage();
-                      }}
-                      disabled={expandedImageIndex === 0}
-                      className="popup-nav-button popup-nav-left"
-                    >
-                      Last
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNextImage();
-                      }}
-                      disabled={expandedImageIndex === allGalleryBlocks.length - 1}
-                      className="popup-nav-button popup-nav-right"
-                    >
-                      Next
-                    </button>
-                  </div>
-                <div className="popup-text-container">
-                  {/* Only show title and description if they exist */}
-                  {(currentExpandedBlock.title || currentExpandedBlock.description) && (
-                    <>
-                      <h1 className="item-title">
-                        {currentExpandedBlock.title || 'Untitled'}
-                      </h1>
-                      {currentExpandedBlock.description && (
-                        <p className="popup-description">
-                          {currentExpandedBlock.description}
-                        </p>
-                      )}
-                    </>
-                  )}
-                  <p className="item-category">
-                    {currentExpandedBlock.category.charAt(0).toUpperCase() + currentExpandedBlock.category.slice(1)}
-                  </p>
-                </div>
-                </div>
-             </div>
-           </div>
-      )}
-
-      {blocksWithTitles.map((block, idx) => {
-        const imageUrl = getImageUrl(block);
-        if (!imageUrl) return null;
-
-        if (block.isDisplay) {
-          const displayKey = `display-${block.id}`;
-          return (
-            <div 
-              key={displayKey} 
-              ref={el => itemRefs.current[displayKey] = el}
-              className="display-block"
-              onClick={() => {
-                setActiveCategory(block.category);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <img src={imageUrl} alt={block.title || 'Display'} />
-              <div className="display-overlay">
-                <div className="display-text-wrap">
-                   <h1 
-                     className="display-text" 
-                     style={getFungalStyle(displayKey)}
-                   >
-                     {block.title || 'Untitled'}
-                   </h1>
-                   <h2>{block.description}</h2>
-                   <p className="navigation-text">
-                     {block.category.charAt(0).toUpperCase() + block.category.slice(1)}
-                   </p>
+      {/* RENDER VIEW DISTRIBUTION ROUTER */}
+      <main className="page">
+        {isBioOpen && (
+          <div className="info-overlay-panel">
+            <div className="info-page">
+              <div className="info-bio-col">
+                <p>9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025. </p>
+                <p>Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. </p>
+                <p>This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings. </p>
+                <p>The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural. </p>
+                <p>Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense.</p>
+                <p>In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures.</p>
+                <p>This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art.</p>
+              </div>
+              <div className="info-visiting-col">
+                <p><LiveWeather /> It's open 24/7 so go visit!</p>
+              </div>
+              <div className="info-team-col">
+                <div className="info-team-list">
+                  <a href="https://malenagrigoli.com/9413sophia.html" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Project Lead</span>
+                    <span className="info-team-name">Malena Grigoli</span>
+                  </a>
+                  <a href="https://colinmartinez.xyz/9413-sophia-avenue-gallery" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Photographer</span>
+                    <span className="info-team-name">Colin Martinez</span>
+                  </a>
+                  <a href="https://cjcontractorsco.com/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Demolition</span>
+                    <span className="info-team-name">C&J Contractors</span>
+                  </a>
+                  <a href="https://www.redhousearchitecture.org/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Institutional Partner</span>
+                    <span className="info-team-name">redhouse studio</span>
+                  </a>
+                  <a href="https://blurry-pictures.com/work" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Videography</span>
+                    <span className="info-team-name">Blurry Pictures</span>
+                  </a>
+                  <a href="https://www.facebook.com/groups/90189049894/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Lead Contamination Consulting</span>
+                    <span className="info-team-name">Robin Brown</span>
+                  </a>
+                  <a href="https://mygrowconnect.org/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Lead Field Agronomist</span>
+                    <span className="info-team-name">Jennifer Lumpkin</span>
+                  </a>
+                  <a href="https://www.instagram.com/indigo.bishop/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Community Organizing</span>
+                    <span className="info-team-name">Indigo Bishop</span>
+                  </a>
+                  <a href="https://cuyahogalandbank.org/" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Project Partner</span>
+                    <span className="info-team-name">Cuyahoga Land Bank</span>
+                  </a>
+                  <a href="https://www.clevelandohio.gov/city-hall/office-mayor/taf" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Funding</span>
+                    <span className="info-team-name">Cleveland Transformative Arts Fund</span>
+                  </a>
+                  <a href="https://harperdaniel.com" target="_blank" rel="noreferrer" className="info-team-row">
+                    <span className="info-team-role">Branding and Website</span>
+                    <span className="info-team-name">Harper Daniel</span>
+                  </a>
                 </div>
               </div>
             </div>
-          );
-        }
+          </div>
+        )}
 
-        const blockKey = `${block.id}-${idx}`;
-        // Find the index in allGalleryBlocks for proper gallery navigation
-        const galleryIndex = allGalleryBlocks.findIndex(b => b.id === block.id);
+        {view === 'home' && (
+          <div className="home-wrap">
+            <canvas ref={sporeCanvasRef} className="spore-canvas" />
+          </div>
+        )}
 
-        return (
-          <div 
-            key={blockKey} 
-            ref={el => itemRefs.current[blockKey] = el}
-            className="item-row"
-          >
-            <img
-              src={imageUrl}
-              alt={block.title || 'Block'}
-              className="item-image"
-              onClick={() => setExpandedImageIndex(galleryIndex)}
-            />
-            <div 
-              className="item-content"
-              onTouchStart={() => handleTouchStart(block.id, idx)}
-              onTouchEnd={handleTouchEnd}
-              onClick={() => setExpandedImageIndex(galleryIndex)}
-            >
-              <h1 className="item-title" style={getFungalStyle(blockKey)}>
-                {block.title || 'Untitled'}
-              </h1>
-              {block.description && (
-                <p className="item-description" style={getFungalStyle(blockKey)}>
-                  {block.description}
-                </p>
-              )}
-              {block.source?.url && (
-                <a
-                  href={block.source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="show-more-button"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Link
-                </a>
-              )}
-              <p className="item-category" style={getFungalStyle(blockKey)}>
-                {block.category.charAt(0).toUpperCase() + block.category.slice(1)}
-              </p>
+        {view === 'film' && (
+          <div className="film-blocks">
+            {filmItems.map((item, index) => (
+              <div 
+                key={item.id} 
+                className="film-block-row"
+                onMouseEnter={() => setHoveredBlock(item)}
+                onMouseLeave={() => setHoveredBlock(null)}
+              >
+                <div className="film-block-img-wrap" onClick={() => launchVideoTarget(item)}>
+                  <img src={item.image?.large?.url || "/contact-3.jpg"} alt="" />
+                  {(item.source?.url || item.attachment?.url) && (
+                    <div className="film-block-play">[PLAY VIDEO]</div>
+                  )}
+                </div>
+                {/* hide film info for now 
+                <div className="film-block-info">
+                  <h3>{item.title || "Untitled Sequence"}</h3>
+                  <p>{item.description || "Archive Film Record Stream"}</p>
+                </div>*/}
+              </div> 
+            ))}
+          </div>
+        )}
+
+        {view === 'publications' && (
+          <div className="publications-grid">
+            {pubItems.map((pub, index) => (
+              <div 
+                key={pub.id} 
+                className="pub-block"
+                onClick={() => setActiveLightboxIndex(index)}
+                onMouseEnter={() => setHoveredBlock(pub)}
+                onMouseLeave={() => setHoveredBlock(null)}
+              >
+                {pub.image?.large?.url && <img src={pub.image.large.url} alt={pub.title} />}
+                <div className="pub-block-info">
+                  <h3>{pub.title}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {view === 'archive' && (
+          <div className="archive-col">
+            {archiveItems.map((item, index) => (
+              <div 
+                key={item.id} 
+                className="archive-block" 
+                onClick={() => setActiveLightboxIndex(index)}
+                onMouseEnter={() => setHoveredBlock(item)}
+                onMouseLeave={() => setHoveredBlock(null)}
+                style={{ marginBottom: `${(index % 3) * 16}px` }}
+              >
+                {item.image?.display?.url && <img src={item.image.display.url} alt={item.title} />}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* EVENT MODULE
+      {showEvent && (
+        <div className="event-widget">
+          <div className="event-widget-header">
+            <span>Upcoming Film Screening</span>
+            <span className="event-widget-close" onClick={() => setShowEvent(false)}>×</span>
+          </div>
+          <div className="event-widget-body">
+            <br />06/06/24<br />
+            <a href="#rsvp">RSVP HERE</a>
+          </div>
+        </div>
+      )} */}
+
+      {/* FIXED CORNER RADIAL METADATA INTERFACE */}
+      {(!isMobile || view === 'home') && (
+      <div className="info-gradient-wrapper">
+        <div className="info-gradient">
+          <canvas ref={gradientCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: -1 }} />
+          <div className="info-gradient-text">
+            {currentActiveBlock ? (
+              <>
+                <div className="info-title" style={{ fontWeight: 'bold' }}>{currentActiveBlock.title || 'Untitled Record'}</div>
+                <div className="info-desc">{currentActiveBlock.description || 'No description supplied.'}</div>
+              </>
+            ) : (
+              <div className="info-desc">
+                {isMobile ? 'Tap spores to extract details' : 'Hover to extract details'}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* SYSTEM LIGHTBOX ARCHIVE MODAL */}
+      {activeLightboxIndex !== -1 && (
+        <div className="lightbox" onClick={() => setActiveLightboxIndex(-1)}>
+          <span className="lightbox-close">(close)</span>
+          <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
+            <div className="lightbox-img-wrap">
+              <img 
+                src={
+                  view === 'archive' 
+                    ? archiveItems[activeLightboxIndex]?.image?.large?.url 
+                    : pubItems[activeLightboxIndex]?.image?.large?.url
+                } 
+                alt="" 
+              />
             </div>
           </div>
-        );
-      })}
+        </div>
+      )}
 
-      {activeCategory !== 'all' && blocksWithoutTitles.length > 0 && (
-        <div className="grid-3col">
-          {blocksWithoutTitles.map((block, idx) => {
-            const imageUrl = getImageUrl(block);
-            if (!imageUrl) return null;
-            // Find the index in allGalleryBlocks for proper gallery navigation
-            const galleryIndex = allGalleryBlocks.findIndex(b => b.id === block.id);
-            
-            return (
-              <img 
-                key={`grid-${idx}`}
-                src={imageUrl}
-                alt={`Grid item ${idx}`}
-                onClick={() => setExpandedImageIndex(galleryIndex)}
-                style={{ cursor: 'pointer' }}
+      {activeVideoUrl && (
+        <div className="video-modal" onClick={() => setActiveVideoUrl(null)}>
+          <div className="video-modal-inner" onClick={e => e.stopPropagation()}>
+            <span className="video-modal-close">(close)</span>
+            <div className="video-embed-wrapper">
+              <iframe 
+                src={activeVideoUrl} 
+                title="Video Embed" 
+                allowFullScreen 
+                allow="autoplay; fullscreen"
               />
-            );
-          })}
-        </div>
-      )}
-
-      {activeCategory === 'all' && displayedBlocks.length > 20 && showMoreCount < displayedBlocks.length && (
-        <div className="show-more-section">
-          <button 
-            className="show-more-button"
-            onClick={() => setShowMoreCount(showMoreCount + 20)}
-          >
-            See {displayedBlocks.length - showMoreCount} more
-          </button>
-        </div>
-      )}
-
-      <div className="footer-hero">
-        <p className="hero-text">
-          Thank you for caring for this house with us.
-        </p>
-      </div>
-
-      <div className="footer-display">
-        <div className="display-overlay-inverted">
-          <img src={footerImage} alt="Footer display" />
-        </div>
-      </div>
-
-      {loading && (
-        <div className="loading">
-          Loading...
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
-};
+}
 
-export default SophiaAvenue;
+// ============================================================
+// HYPERLOCAL COORDINATE OPEN-METEO WEATHER ENGINE
+// ============================================================
+function LiveWeather() {
+  const [weather, setWeather] = useState({ temp: '--°F', condition: 'loading' });
+
+  useEffect(() => {
+    const lat = 41.4820;
+    const lon = -81.6521;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        if (data?.current) {
+          const currentTemp = Math.round(data.current.temperature_2m);
+          const code = data.current.weather_code;
+          
+          let condStr = 'clear';
+          if (code >= 1 && code <= 3) condStr = 'partly cloudy';
+          if (code >= 45 && code <= 48) condStr = 'foggy';
+          if (code >= 51 && code <= 67) condStr = 'raining';
+          if (code >= 71 && code <= 77) condStr = 'snowing';
+          if (code >= 80) condStr = 'stormy';
+
+          setWeather({ temp: `${currentTemp}°F`, condition: condStr });
+        }
+      })
+      .catch(() => {
+        setWeather({ temp: '64°F', condition: 'overcast' }); 
+      });
+  }, []);
+
+  return (
+    <span className="inline-weather">The weather is currently {weather.condition} and {weather.temp} directly at the site.</span>
+  );
+}
