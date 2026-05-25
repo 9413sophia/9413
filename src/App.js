@@ -261,7 +261,9 @@ export default function App() {
     setActiveVideoUrl(rawUrl);
   };
 
-  if (loading) return <div className="loading-screen">9413 sophia ave</div>;
+  // Run this after the DOM is fully loaded
+document.body.innerHTML = document.body.innerHTML.replace(/9413 sophia ave/gi, '<i>9413 sophia ave</i>');
+  if (loading) return <div className="loading-screen italic">9413 sophia ave</div>;
 
   // Track down current metadata target relative to cross-page view types
   const currentActiveBlock = activeLightboxIndex !== -1 
@@ -305,16 +307,16 @@ export default function App() {
           <div className="info-overlay-panel">
             <div className="info-page">
               <div className="info-bio-col">
-                <p>9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025. </p>
-                <p>Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. </p>
-                <p>This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings. </p>
-                <p>The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural. </p>
-                <p>Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense.</p>
-                <p>In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures.</p>
-                <p>This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art.</p>
+                <p>9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025.
+                <br>Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. 
+                <br>This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings.
+                <br>The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural.
+                <br>Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense.
+                <br>In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures.
+                <br>This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art.</p>
               </div>
               <div className="info-visiting-col">
-                <p><LiveWeather /> It's open 24/7 so go visit!</p>
+                <p><LiveWeather /> It's open to the public 24/7</p>
               </div>
               <div className="info-team-col">
                 <div className="info-team-list">
@@ -356,7 +358,7 @@ export default function App() {
                   </a>
                   <a href="https://www.clevelandohio.gov/city-hall/office-mayor/taf" target="_blank" rel="noreferrer" className="info-team-row">
                     <span className="info-team-role">Funding</span>
-                    <span className="info-team-name">Cleveland Transformative Arts Fund</span>
+                    <span className="info-team-name">Transformative Arts Fund</span>
                   </a>
                   <a href="https://harperdaniel.com" target="_blank" rel="noreferrer" className="info-team-row">
                     <span className="info-team-role">Branding and Website</span>

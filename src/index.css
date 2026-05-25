@@ -33,6 +33,11 @@ body, html, h1, h2, h3, h4, p, span, a, button, div {
   text-transform: none;
 }
 
+.italic {
+   font-style: italic;
+
+}
+
 body {
   background: var(--color-bg) !important;
   overflow-x: hidden;
@@ -89,7 +94,7 @@ img { display: block; max-width: 100%; }
 .info-gradient {
   position: fixed; bottom: 0; right: 0; width: calc(100vw / 6); height: auto; z-index: 80; pointer-events: none;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-  padding: 0 var(--pad-mobile) var(--pad); text-align: center;
+  padding: 0 var(--pad-mobile) var(--pad); text-align: left;
   background-color: #ffffff;
   border-radius: 100px;
   box-shadow: 0 0 5px 20px #ffffff;
