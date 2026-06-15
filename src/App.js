@@ -6,38 +6,183 @@ import React, { useState, useEffect, useRef } from 'react';
 const ARCHIVE_CHANNEL = 'archive-4kwdmkcfu_y';
 const PUBS_CHANNEL = 'publications-hoc7ciafzuq';
 const FILM_CHANNEL = 'film-0iexlngxoz0';
+const CHAPBOOK_CHANNEL = 'chapbook-ix8m-yr100a'; 
+
+const SPORE_COUNT = 20; 
+
+// ============================================================
+// GEOMETRY & MATH ENGINE
+// ============================================================
+function generateFloorplanTargets(width, height, numPoints) {
+  const targets = [];
+  const w = Math.min(width, height) * 0.5; 
+  const h = w * 0.7;     
+  const cx = width / 2;
+  const cy = height / 2;
+
+  const segments = [
+    [-w/2, -h/2, w/2, -h/2],   
+    [w/2, -h/2, w/2, h/2],     
+    [w/2, h/2, -w/2, h/2],     
+    [-w/2, -h/2, -w/2, -h/6],  
+    [-w/2, h/6, -w/2, h/2],    
+
+    [-w/8, -w/8, w/8, -w/8],   
+    [w/8, -w/8, w/8, w/8],     
+    [w/8, w/8, -w/8, w/8],     
+    [-w/8, w/8, -w/8, -w/8],   
+
+    [-w/2 - w/6, -h/6, -w/2, -h/6],      
+    [-w/2 - w/6, -h/6, -w/2 - w/6, h/6], 
+    [-w/2 - w/6, h/6, -w/2, h/6]         
+  ];
+
+  let totalLength = 0;
+  segments.forEach(seg => {
+    seg.segLength = Math.hypot(seg[2] - seg[0], seg[3] - seg[1]);
+    totalLength += seg.segLength;
+  });
+
+  segments.forEach(seg => {
+    const pointsOnSegment = Math.floor((seg.segLength / totalLength) * numPoints);
+    for (let i = 0; i < pointsOnSegment; i++) {
+      const t = i / pointsOnSegment;
+      targets.push({
+        x: cx + seg[0] + (seg[2] - seg[0]) * t,
+        y: cy + seg[1] + (seg[3] - seg[1]) * t
+      });
+    }
+  });
+
+ while (targets.length < numPoints) {
+    const randomSeg = segments[Math.floor(Math.random() * segments.length)];
+    const t = Math.random(); // random position along that line
+    targets.push({
+      x: cx + randomSeg[0] + (randomSeg[2] - randomSeg[0]) * t,
+      y: cy + randomSeg[1] + (randomSeg[3] - randomSeg[1]) * t
+    });
+  }
+
+  return targets.slice(0, numPoints);
+}
+
+// ============================================================
+// CALM OSCILLATING SPORE VECTOR CLASS
+// ============================================================
+class Spore {
+  constructor(x, y, blockData) {
+    this.x = x;
+    this.y = y;
+    this.size = 50; 
+    this.target = null;
+    this.isHovered = false;
+    this.blockData = blockData || null;
+
+    // Fluid orbital coordinates for slow concentric loops
+    this.angle = Math.random() * Math.PI * 2;
+    this.angleSpeed = 0.003 + Math.random() * 0.006; 
+    this.radiusX = 40 + Math.random() * 40;         
+    this.radiusY = 30 + Math.random() * 30;
+    
+    // Smooth moving structural anchor
+    this.anchorX = x;
+    this.anchorY = y;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+  }
+
+  update(alignmentStrength, width, height) {
+    if (this.isHovered) return; 
+
+    this.angle += this.angleSpeed;
+
+    // Lazily drift the core anchor frames
+    this.anchorX += this.vx;
+    this.anchorY += this.vy;
+
+    const margin = 140;
+    if (this.anchorX < margin) this.vx += 0.002;
+    if (this.anchorX > width - margin) this.vx -= 0.002;
+    if (this.anchorY < margin) this.vy += 0.002;
+    if (this.anchorY > height - margin) this.vy -= 0.002;
+
+    this.vx *= 0.99;
+    this.vy *= 0.99;
+
+    // Compute active floating position path
+    const freeX = this.anchorX + Math.cos(this.angle) * this.radiusX;
+    const freeY = this.anchorY + Math.sin(this.angle) * this.radiusY;
+
+    if (this.target) {
+      // Linearly interpolate coordinates directly inside the sine modulation flow
+      const currentTargetX = freeX + (this.target.x - freeX) * alignmentStrength;
+      const currentTargetY = freeY + (this.target.y - freeY) * alignmentStrength;
+
+      const followEase = 0.0012; 
+      this.x += (currentTargetX - this.x) * followEase;
+      this.y += (currentTargetY - this.y) * followEase;
+    } else {
+      this.x += (freeX - this.x) * 0.03;
+      this.y += (freeY - this.y) * 0.03;
+    }
+  }
+
+  draw(ctx, img) {
+    if (img && img.complete) {
+      ctx.drawImage(
+        img,
+        this.x - this.size / 2,
+        this.y - this.size / 2,
+        this.size,
+        this.size
+      );
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#D9D9D9';
+      ctx.fill();
+    }
+  }
+}
+
+// ============================================================
+// MAIN APPLICATION MODULE
+// ============================================================
+const BoxText = ({ item, isScrolling = true }) => {
+  const text = [item?.title, item?.description].filter(Boolean).join(' — ') || 'Untitled Record';
+  return (
+    <div className={`item-text-container ${isScrolling ? 'scrollable' : ''}`}>
+      <span className="item-text-content">{text}</span>
+    </div>
+  );
+};
 
 export default function App() {
-  // View states: 'home' | 'film' | 'publications' | 'archive'
   const [view, setView] = useState('home');
   const [archiveItems, setArchiveItems] = useState([]);
   const [pubItems, setPubItems] = useState([]);
   const [filmItems, setFilmItems] = useState([]);
+  const [chapbookItems, setChapbookItems] = useState([]); 
   const [loading, setLoading] = useState(true);
 
-  // Interface states
   const [hoveredBlock, setHoveredBlock] = useState(null);
   const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1);
   const [activeVideoUrl, setActiveVideoUrl] = useState(null);
   const [isBioOpen, setIsBioOpen] = useState(false);
-  const [showEvent, setShowEvent] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-      const check = () => setIsMobile(window.innerWidth < 600);
-      check();
-      window.addEventListener('resize', check);
-      return () => window.removeEventListener('resize', check);
-    }, []);
+  const [mobileStatementExpanded, setMobileStatementExpanded] = useState(false);
 
-  // Canvas context refs
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 600);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const sporeCanvasRef = useRef(null);
-  const gradientCanvasRef = useRef(null);
   const sporesRef = useRef([]);
-  const sporeImgRef = useRef(null); 
+  const sporeImgRef = useRef(null);
 
-  // ============================================================
-  // DATA AND SVG INLINE PRELOADING PIPELINES
-  // ============================================================
   useEffect(() => {
     const svgMarkup = `
     <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -49,7 +194,6 @@ export default function App() {
     </radialGradient>
     </defs>
     </svg>
-
     `;
 
     const img = new Image();
@@ -64,12 +208,14 @@ export default function App() {
     Promise.all([
       fetchChannel(ARCHIVE_CHANNEL), 
       fetchChannel(PUBS_CHANNEL),
-      fetchChannel(FILM_CHANNEL)
+      fetchChannel(FILM_CHANNEL),
+      fetchChannel(CHAPBOOK_CHANNEL)
     ])
-      .then(([archive, pubs, film]) => {
+      .then(([archive, pubs, film, chapbooks]) => {
         setArchiveItems(archive);
         setPubItems(pubs);
         setFilmItems(film);
+        setChapbookItems(chapbooks);
         setLoading(false);
       })
       .catch(err => {
@@ -78,7 +224,6 @@ export default function App() {
       });
   }, []);
 
-  // Global Cross-Page Keyboard Triggers
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (activeLightboxIndex === -1) return;
@@ -97,16 +242,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeLightboxIndex, archiveItems, pubItems, filmItems, view]);
 
-  // Reset hovered element state on tab route shift to prevent ghost layouts
   useEffect(() => {
     setHoveredBlock(null);
   }, [view]);
 
   // ============================================================
-  // CANVAS SPORE VECTOR GRAPHICS RENDER ENGINE
+  // SEAMLESS TIMELINE OSCILLATOR PIPELINE
   // ============================================================
   useEffect(() => {
-    if (view !== 'home' || loading || !sporeCanvasRef.current) return;
+    if (view !== 'home' || loading || !sporeCanvasRef.current || isBioOpen) return;
 
     const canvas = sporeCanvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -115,52 +259,38 @@ export default function App() {
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      
+      const targets = generateFloorplanTargets(canvas.width, canvas.height, SPORE_COUNT);
+      
+      sporesRef.current = Array.from({ length: SPORE_COUNT }).map((_, i) => {
+        const spore = new Spore(
+          Math.random() * canvas.width, 
+          Math.random() * canvas.height,
+          archiveItems[i] || null
+        );
+        spore.target = targets[i];
+        return spore;
+      });
     };
+    
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    sporesRef.current = Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.9,
-      vy: (Math.random() - 0.5) * 0.9,
-      size: 50, 
-      isHovered: false,
-      blockData: archiveItems[i] || null
-    }));
+    const renderLoop = (timestamp) => {
+      // Continuous waveform cycle mapping (~30s intervals)
+      const wave = Math.cos(timestamp / 4500); 
+      const alignmentStrength = (wave + 1) / 2; 
 
-    const renderLoop = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       sporesRef.current.forEach((spore) => {
-        if (!spore.isHovered) {
-          spore.x += spore.vx;
-          spore.y += spore.vy;
-
-          if (spore.x < 0 || spore.x > canvas.width) spore.vx *= -1;
-          if (spore.y < 0 || spore.y > canvas.height) spore.vy *= -1;
-        }
-
-        if (sporeImgRef.current && sporeImgRef.current.complete) {
-          ctx.drawImage(
-            sporeImgRef.current,
-            spore.x - spore.size / 2,
-            spore.y - spore.size / 2,
-            spore.size,
-            spore.size
-          );
-        } else {
-          ctx.beginPath();
-          ctx.arc(spore.x, spore.y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#D9D9D9';
-          ctx.fill();
-        }
+        spore.update(alignmentStrength, canvas.width, canvas.height);
+        spore.draw(ctx, sporeImgRef.current);
       });
 
       animationFrameId = requestAnimationFrame(renderLoop);
     };
-    renderLoop();
+    animationFrameId = requestAnimationFrame(renderLoop);
 
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -170,7 +300,7 @@ export default function App() {
 
       sporesRef.current.forEach((spore) => {
         const dist = Math.hypot(spore.x - mx, spore.y - my);
-        if (dist < 45) { 
+        if (dist < 25) { 
           spore.isHovered = true;
           matchFound = spore.blockData;
         } else {
@@ -191,47 +321,11 @@ export default function App() {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
-      if (canvas) {
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseleave', handleMouseLeave);
-      }
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [view, loading, archiveItems]);
+  }, [view, loading, archiveItems, isBioOpen]);
 
-  // ============================================================
-  // MUSHROOM RADIAL INFO GRADIENT LAYER
-  // ============================================================
-  useEffect(() => {
-    if (!gradientCanvasRef.current) return;
-    const canvas = gradientCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let animId;
-    let time = 0;
-
-    const drawGradient = () => {
-      time += 0.02;
-      const w = canvas.width = canvas.offsetWidth;
-      const h = canvas.height = canvas.offsetHeight;
-      ctx.clearRect(0, 0, w, h);
-
-      const pulseFactor = Math.sin(time) * 16;
-      const radius = Math.min(w, h) * 0.8 + pulseFactor;
-
-      let grad = ctx.createRadialGradient(w, h, 0, w, h, radius);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-      grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.95)');
-      grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-      animId = requestAnimationFrame(drawGradient);
-    };
-
-    drawGradient();
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
-  // Helper utility to safely construct structural modern iframe paths
   const launchVideoTarget = (item) => {
     const rawUrl = item.source?.url || item.attachment?.url;
     if (!rawUrl) return;
@@ -261,30 +355,29 @@ export default function App() {
     setActiveVideoUrl(rawUrl);
   };
 
-  // Run this after the DOM is fully loaded
-document.body.innerHTML = document.body.innerHTML.replace(/9413 sophia ave/gi, '<i>9413 sophia ave</i>');
-  if (loading) return <div className="loading-screen italic">9413 sophia ave</div>;
+  const getActiveLightboxItem = () => {
+    if (activeLightboxIndex === -1) return null;
+    if (view === 'archive') return archiveItems[activeLightboxIndex];
+    if (view === 'publications') return pubItems[activeLightboxIndex] || chapbookItems[activeLightboxIndex];
+    return null;
+  };
 
-  // Track down current metadata target relative to cross-page view types
-  const currentActiveBlock = activeLightboxIndex !== -1 
-    ? (view === 'archive' ? archiveItems[activeLightboxIndex] : view === 'publications' ? pubItems[activeLightboxIndex] : filmItems[activeLightboxIndex])
-    : hoveredBlock;
+  if (loading) return <div className="loading-screen italic"><i>9413 sophia ave</i></div>;
 
   return (
     <div className="app-container" style={{
-      backgroundImage: (view === 'home' && hoveredBlock?.image?.display?.url) ? `url(${hoveredBlock.image.display.url})` : 'none',
+      backgroundImage: (view === 'home' && hoveredBlock?.image?.display?.url && !isBioOpen) ? `url(${hoveredBlock.image.display.url})` : 'none',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed',
       minHeight: '100vh'
     }}>
       
-      {/* GLOBAL TOP NAV SYSTEM */}
       <nav className="nav">
         <div className="nav-sentence">
-          9413 Sophia Ave is a choreographed deconstruction of the built environment{' '}
+          <i>9413 Sophia Ave</i> is a choreographed deconstruction of the built environment{' '}
           <span className="info-read-toggle" onClick={() => { setView('home'); setIsBioOpen(!isBioOpen); }}>
-            {isBioOpen ? '(Close)' : '(Read More)'}
+            {isBioOpen ? '(Read Less)' : '(Read More)'}
           </span>
         </div>
 
@@ -301,126 +394,133 @@ document.body.innerHTML = document.body.innerHTML.replace(/9413 sophia ave/gi, '
         </button>
       </nav>
 
-      {/* RENDER VIEW DISTRIBUTION ROUTER */}
       <main className="page">
         {isBioOpen && (
           <div className="info-overlay-panel">
             <div className="info-page">
-              <div className="info-bio-col">
-                <p>9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025.
-                <br />Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood. 
-                <br />This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings.
-                <br />The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural.
-                <br />Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense.
-                <br />In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures.
-                <br />This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art.</p>
-              </div>
-              <div className="info-visiting-col">
-                <p><LiveWeather /> It's open to the public 24/7</p>
-              </div>
-              <div className="info-team-col">
-                <div className="info-team-list">
-                  <a href="https://malenagrigoli.com/9413sophia.html" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Project Lead</span>
-                    <span className="info-team-name">Malena Grigoli</span>
-                  </a>
-                  <a href="https://colinmartinez.xyz/9413-sophia-avenue-gallery" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Photographer</span>
-                    <span className="info-team-name">Colin Martinez</span>
-                  </a>
-                  <a href="https://cjcontractorsco.com/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Demolition</span>
-                    <span className="info-team-name">C&J Contractors</span>
-                  </a>
-                  <a href="https://www.redhousearchitecture.org/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Institutional Partner</span>
-                    <span className="info-team-name">redhouse studio</span>
-                  </a>
-                  <a href="https://blurry-pictures.com/work" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Videography</span>
-                    <span className="info-team-name">Blurry Pictures</span>
-                  </a>
-                  <a href="https://www.facebook.com/groups/90189049894/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Lead Contamination Consulting</span>
-                    <span className="info-team-name">Robin Brown</span>
-                  </a>
-                  <a href="https://mygrowconnect.org/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Lead Field Agronomist</span>
-                    <span className="info-team-name">Jennifer Lumpkin</span>
-                  </a>
-                  <a href="https://www.instagram.com/indigo.bishop/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Community Organizing</span>
-                    <span className="info-team-name">Indigo Bishop</span>
-                  </a>
-                  <a href="https://cuyahogalandbank.org/" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Project Partner</span>
-                    <span className="info-team-name">Cuyahoga Land Bank</span>
-                  </a>
-                  <a href="https://www.clevelandohio.gov/city-hall/office-mayor/taf" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Funding</span>
-                    <span className="info-team-name">Transformative Arts Fund</span>
-                  </a>
-                  <a href="https://harperdaniel.com" target="_blank" rel="noreferrer" className="info-team-row">
-                    <span className="info-team-role">Branding and Website</span>
-                    <span className="info-team-name">Harper Daniel</span>
-                  </a>
+              <div className="info-col-left">
+                <div className="info-section">
+                  <h2 className="info-heading"><img src="/bro.svg" alt="*" className="heading-svg" /> Visiting</h2>
+                  <p><LiveWeather />. The site is open to the public 24/7. The full address is 9413 Sophia Ave, Cleveland, OH 44104. <a href="https://www.google.com/maps/place/9413+Sophia+Ave,+Cleveland,+OH+44104/@41.4789004,-81.6206986,31m/data=!3m1!1e3!4m6!3m5!1s0x8830fb6be83f1231:0x9156bee96b04d52f!8m2!3d41.4790367!4d-81.6207346!16s%2Fg%2F11c2bq42wh?entry=ttu&g_ep=EgoyMDI2MDYxMC4wIKXMDSoASAFQAw%3D%3D">Get directions</a>.</p>
                 </div>
+
+                <div className="info-section">
+                  <h2 className="info-heading"><img src="/bro.svg" alt="*" className="heading-svg" /> Statement</h2>
+                  <div className={`statement-text ${isMobile && !mobileStatementExpanded ? 'collapsed' : ''}`}>
+                    <p>9413 Sophia Ave is both an address and the title of a durational, in situ performance which took place from September 2024 - September 2025.</p>
+                    <p>Driven by an interest in the life cycle of structures, 9413 Sophia Ave operated as a case study with the aim to enact collective maintenance and intentional turnover of a structure through an active exchange with peoples' interest in their own neighborhood.</p>
+                    <p>This social practice work took interest in the relationship between several local environmental justice organizations with focuses on varied aspects of the built environment, seeking to emphasize the group's existing working dynamic and engage the broader community through workshops and onsite gatherings.</p>
+                    <p>The year-long performance involved the choreographed deconstruction and the subsequent recycling and biocycling of a home which was condemned by the Cuyahoga Land Bank – this resulted in a participatorily designed installation on the site. By using the concept of biocycling as an artistic medium, the life cycle of a built structure could be considered from myriad perspectives – the material as well as the cultural.</p>
+                    <p>Biocycling refers to a process of using a waste product – in this case, demolition waste – as a substrate to be bound together by mycelium. The resultant substance can be used as an alternative building material for sculptural or, potentially, structural purposes. The material treatment within 9413 Sophia Ave is situated in a post-industrial and post-recycling cultural landscape – it aimed to recycle in an active, rather than passive, sense.</p>
+                    <p>In addition to the physical performance, this work resulted in two publications in collaboration with Colin Martinez, and a forthcoming documentary film by Jacob Koestler and Michael McDermit of Blurry Pictures.</p>
+                    <p>This work was made possible through the support of the City of Cleveland and Cleveland City Council's Transformative Arts Fund, a portion of American Rescue Plan Act funds allotted for public art.</p>
+                  </div>
+                  {isMobile && !mobileStatementExpanded && (
+                    <button className="read-more-btn" onClick={() => setMobileStatementExpanded(true)}>Read More</button>
+                  )}
+                </div>
+
+                <div className="info-section">
+                  <h2 className="info-heading"><img src="/bro.svg" alt="*" className="heading-svg" /> Thanks to our project team</h2>
+                  <div className="info-team-list">
+                     <div className="info-team-row"><span>Malena Grigoli</span><span>Project Lead</span></div>
+                     <div className="info-team-row"><span>Colin Martinez</span><span>Photographer</span></div>
+                     <div className="info-team-row"><span>C&J Contractors</span><span>Demolition</span></div>
+                     <div className="info-team-row"><span>redhouse studio</span><span>Institutional Partner</span></div>
+                     <div className="info-team-row"><span>Blurry Pictures</span><span>Videography</span></div>
+                     <div className="info-team-row"><span>Robin Brown</span><span>Lead Contamination Consulting</span></div>
+                     <div className="info-team-row"><span>Jennifer Lumpkin</span><span>Lead Field Agronomist</span></div>
+                     <div className="info-team-row"><span>Indigo Bishop</span><span>Community Organizing</span></div>
+                     <div className="info-team-row"><span>Cuyahoga Land Bank</span><span>Project Partner</span></div>
+                     <div className="info-team-row"><span>Transformative Arts Fund</span><span>Funding</span></div>
+                     <div className="info-team-row"><span>Harper Daniel</span><span>Branding and Website</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-col-right">
+                {isMobile && <h2 className="info-heading mobile-contact-heading"><img src="/bro.svg" alt="*" className="heading-svg" /> Contact</h2>}
+                <a href="mailto:malenagrigoli@gmail.com" className="contact-link-block">
+                  <div className="hover-contact-ui"><img src="/bro.svg" alt="*" className="heading-svg" /> Contact</div>
+                  <h3>Interested in scheduling a talk?</h3>
+                  <img src="/contact-1.png" alt="Interior Details" /> 
+                </a>
+                <a href="mailto:malenagrigoli@gmail.com" className="contact-link-block">
+                  <div className="hover-contact-ui"><img src="/bro.svg" alt="*" className="heading-svg" /> Contact</div>
+                  <h3>Interested in showing the film?</h3>
+                  <img src="/contact-2.jpg" alt="Aerial Demolition" />
+                </a>
+                <a href="mailto:malenagrigoli@gmail.com" className="contact-link-block">
+                  <div className="hover-contact-ui"><img src="/bro.svg" alt="*" className="heading-svg" /> Contact</div>
+                  <h3>Interested in carrying the book?</h3>
+                  <img src="/contact-3.jpg" alt="Book spread" />
+                </a>
               </div>
             </div>
           </div>
         )}
 
-        {view === 'home' && (
+        {view === 'home' && !isBioOpen && (
           <div className="home-wrap">
             <canvas ref={sporeCanvasRef} className="spore-canvas" />
           </div>
         )}
 
-        {view === 'film' && (
-          <div className="film-blocks">
-            {filmItems.map((item, index) => (
+        {view === 'film' && !isBioOpen && (
+          <div className="film-container">
+            {filmItems.map((item) => (
               <div 
                 key={item.id} 
-                className="film-block-row"
                 onMouseEnter={() => setHoveredBlock(item)}
                 onMouseLeave={() => setHoveredBlock(null)}
+                className="film-blocks"
               >
                 <div className="film-block-img-wrap" onClick={() => launchVideoTarget(item)}>
-                  <img src={item.image?.large?.url || "/contact-3.jpg"} alt="" />
+                  {item.image?.large?.url && <img src={item.image.large.url} alt="" />}
                   {(item.source?.url || item.attachment?.url) && (
                     <div className="film-block-play">[PLAY VIDEO]</div>
                   )}
                 </div>
-                {/* hide film info for now 
-                <div className="film-block-info">
-                  <h3>{item.title || "Untitled Sequence"}</h3>
-                  <p>{item.description || "Archive Film Record Stream"}</p>
-                </div>*/}
+                <BoxText item={item} />
               </div> 
             ))}
           </div>
         )}
 
-        {view === 'publications' && (
-          <div className="publications-grid">
-            {pubItems.map((pub, index) => (
-              <div 
-                key={pub.id} 
-                className="pub-block"
-                onClick={() => setActiveLightboxIndex(index)}
-                onMouseEnter={() => setHoveredBlock(pub)}
-                onMouseLeave={() => setHoveredBlock(null)}
-              >
-                {pub.image?.large?.url && <img src={pub.image.large.url} alt={pub.title} />}
-                <div className="pub-block-info">
-                  <h3>{pub.title}</h3>
+        {view === 'publications' && !isBioOpen && (
+          <div className="publications-wrapper">
+            <div className="pub-column">
+              {chapbookItems.map((pub, index) => (
+                <div 
+                  key={pub.id} 
+                  className="pub-block"
+                  onClick={() => setActiveLightboxIndex(index)}
+                  onMouseEnter={() => setHoveredBlock(pub)}
+                  onMouseLeave={() => setHoveredBlock(null)}
+                >
+                  {pub.image?.large?.url && <img src={pub.image.large.url} alt={pub.title} />}
+                  {index === 0 && <BoxText item={pub} />}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="pub-column">
+              {pubItems.map((pub, index) => (
+                <div 
+                  key={pub.id} 
+                  className="pub-block"
+                  onClick={() => setActiveLightboxIndex(index)}
+                  onMouseEnter={() => setHoveredBlock(pub)}
+                  onMouseLeave={() => setHoveredBlock(null)}
+                >
+                  {pub.image?.large?.url && <img src={pub.image.large.url} alt={pub.title} />}
+                  {index === 0 && <BoxText item={pub} />}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {view === 'archive' && (
+        {view === 'archive' && !isBioOpen && (
           <div className="archive-col">
             {archiveItems.map((item, index) => (
               <div 
@@ -432,59 +532,23 @@ document.body.innerHTML = document.body.innerHTML.replace(/9413 sophia ave/gi, '
                 style={{ marginBottom: `${(index % 3) * 16}px` }}
               >
                 {item.image?.display?.url && <img src={item.image.display.url} alt={item.title} />}
+                <BoxText item={item} />
               </div>
             ))}
           </div>
         )}
       </main>
 
-      {/* EVENT MODULE
-      {showEvent && (
-        <div className="event-widget">
-          <div className="event-widget-header">
-            <span>Upcoming Film Screening</span>
-            <span className="event-widget-close" onClick={() => setShowEvent(false)}>×</span>
-          </div>
-          <div className="event-widget-body">
-            <br />06/06/24<br />
-            <a href="#rsvp">RSVP HERE</a>
-          </div>
-        </div>
-      )} */}
-
-      {/* FIXED CORNER RADIAL METADATA INTERFACE */}
-      {(!isMobile || view === 'home') && (
-      <div className="info-gradient-wrapper">
-        <div className="info-gradient">
-          <canvas ref={gradientCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: -1 }} />
-          <div className="info-gradient-text">
-            {currentActiveBlock ? (
-              <>
-                <div className="info-title" style={{ fontWeight: 'bold' }}>{currentActiveBlock.title || 'Untitled Record'}</div>
-                <div className="info-desc">{currentActiveBlock.description || 'No description supplied.'}</div>
-              </>
-            ) : (
-              <div className="info-desc">
-                {isMobile ? 'Tap spores to extract details' : 'Hover to extract details'}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* SYSTEM LIGHTBOX ARCHIVE MODAL */}
       {activeLightboxIndex !== -1 && (
         <div className="lightbox" onClick={() => setActiveLightboxIndex(-1)}>
+          <div className="lightbox-top-left">
+             {getActiveLightboxItem() && <BoxText item={getActiveLightboxItem()} isScrolling={false} />}
+          </div>
           <span className="lightbox-close">(close)</span>
           <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
             <div className="lightbox-img-wrap">
               <img 
-                src={
-                  view === 'archive' 
-                    ? archiveItems[activeLightboxIndex]?.image?.large?.url 
-                    : pubItems[activeLightboxIndex]?.image?.large?.url
-                } 
+                src={getActiveLightboxItem()?.image?.large?.url} 
                 alt="" 
               />
             </div>
@@ -548,6 +612,6 @@ function LiveWeather() {
   }, []);
 
   return (
-    <span className="inline-weather">The weather is currently {weather.condition} and {weather.temp} directly at the site.</span>
+    <span className="inline-weather">The weather is {weather.condition} and {weather.temp}</span>
   );
 }
