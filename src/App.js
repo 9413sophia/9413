@@ -423,17 +423,17 @@ export default function App() {
                 <div className="info-section">
                   <h2 className="info-heading"><img src="/bro.svg" alt="*" className="heading-svg" /> Thanks to our project team</h2>
                   <div className="info-team-list">
-                     <div className="info-team-row"><span>Malena Grigoli</span><span>Project Lead</span></div>
-                     <div className="info-team-row"><span>Colin Martinez</span><span>Photographer</span></div>
-                     <div className="info-team-row"><span>C&J Contractors</span><span>Demolition</span></div>
-                     <div className="info-team-row"><span>redhouse studio</span><span>Institutional Partner</span></div>
-                     <div className="info-team-row"><span>Blurry Pictures</span><span>Videography</span></div>
-                     <div className="info-team-row"><span>Robin Brown</span><span>Lead Contamination Consulting</span></div>
-                     <div className="info-team-row"><span>Jennifer Lumpkin</span><span>Lead Field Agronomist</span></div>
-                     <div className="info-team-row"><span>Indigo Bishop</span><span>Community Organizing</span></div>
-                     <div className="info-team-row"><span>Cuyahoga Land Bank</span><span>Project Partner</span></div>
-                     <div className="info-team-row"><span>Transformative Arts Fund</span><span>Funding</span></div>
-                     <div className="info-team-row"><span>Harper Daniel</span><span>Branding and Website</span></div>
+                    <a href="https://malenagrigoli.com/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Malena Grigoli</span><span>Project Lead</span></div></a>
+                    <a href="https://colinmartinez.xyz/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Colin Martinez</span><span>Photographer</span></div></a>
+                    <a href="https://cjcontractorsco.com/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>C&J Contractors</span><span>Demolition</span></div></a>
+                    <a href="https://www.redhousearchitecture.org/design" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>redhouse studio</span><span>Institutional Partner</span></div></a>
+                    <a href="https://blurry-pictures.com/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Blurry Pictures</span><span>Videography</span></div></a>
+                    <a href="https://www.linkedin.com/in/robin-brown-3033555a/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Robin Brown</span><span>Lead Contamination Consulting</span></div></a>
+                    <a href="https://www.linkedin.com/in/jenniferlumpkin/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Jennifer Lumpkin</span><span>Lead Field Agronomist</span></div></a>
+                    <a href="https://www.linkedin.com/in/indigobishop" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Indigo Bishop</span><span>Community Organizing</span></div></a>
+                    <a href="#" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Cuyahoga Land Bank</span><span>Project Partner</span></div></a>
+                    <a href="#" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Transformative Arts Fund</span><span>Funding</span></div></a>
+                    <a href="https://www.harperdaniel.com/" style={{textDecoration: 'none', color: 'inherit'}}><div className="info-team-row"><span>Harper Daniel</span><span>Website</span></div></a>
                   </div>
                 </div>
               </div>
