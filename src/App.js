@@ -300,7 +300,9 @@ export default function App() {
 
       sporesRef.current.forEach((spore) => {
         const dist = Math.hypot(spore.x - mx, spore.y - my);
-        if (dist < 25) { 
+        
+        // Increased from 25 to 55 to add a ~30px invisible hover buffer
+        if (dist < 55) { 
           spore.isHovered = true;
           matchFound = spore.blockData;
         } else {
