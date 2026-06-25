@@ -172,6 +172,8 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileStatementExpanded, setMobileStatementExpanded] = useState(false);
 
+  const [activeLightboxType, setActiveLightboxType] = useState(null); // Tracks 'pubs' or 'chapbooks'
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 600);
     check();
@@ -358,11 +360,24 @@ export default function App() {
   };
 
   const getActiveLightboxItem = () => {
-    if (activeLightboxIndex === -1) return null;
-    if (view === 'archive') return archiveItems[activeLightboxIndex];
-    if (view === 'publications') return pubItems[activeLightboxIndex] || chapbookItems[activeLightboxIndex];
-    return null;
-  };
+  if (activeLightboxIndex === -1) return null;
+  
+  if (view === 'archive') return archiveItems[activeLightboxIndex];
+  
+  if (view === 'publications') {
+    // Check the active type set by the onClick handler
+    if (activeLightboxType === 'chapbooks') {
+      return chapbookItems[activeLightboxIndex];
+    } else {
+      return pubItems[activeLightboxIndex];
+    }
+  }
+  
+  // (Optional fallback for film items if they ever use the lightbox instead of the video modal)
+  if (view === 'film') return filmItems[activeLightboxIndex];
+  
+  return null;
+};
 
   if (loading) return <div className="loading-screen italic"><i>9413 sophia ave</i></div>;
 
@@ -468,35 +483,51 @@ export default function App() {
           </div>
         )}
 
-        {view === 'film' && !isBioOpen && (
+       {view === 'film' && !isBioOpen && (
           <div className="film-container">
-            {filmItems.map((item) => (
-              <div 
-                key={item.id} 
-                onMouseEnter={() => setHoveredBlock(item)}
-                onMouseLeave={() => setHoveredBlock(null)}
-                className="film-blocks"
-              >
-                <div className="film-block-img-wrap" onClick={() => launchVideoTarget(item)}>
-                  {item.image?.large?.url && <img src={item.image.large.url} alt="" />}
-                  {(item.source?.url || item.attachment?.url) && (
-                    <div className="film-block-play">[PLAY VIDEO]</div>
-                  )}
-                </div>
-                <BoxText item={item} />
-              </div> 
-            ))}
+            {filmItems.map((item) => {
+              // Extract the text logic here so we don't need the BoxText component
+              const text = [item?.title, item?.description].filter(Boolean).join(' — ') || 'Untitled Record';
+
+              return (
+                <div 
+                  key={item.id} 
+                  onMouseEnter={() => setHoveredBlock(item)}
+                  onMouseLeave={() => setHoveredBlock(null)}
+                  className="film-blocks"
+                  style={{ display: 'flex', flexDirection: 'column' }}
+                >
+                  <div className="film-block-img-wrap" onClick={() => launchVideoTarget(item)}>
+                    {item.image?.large?.url && <img src={item.image.large.url} alt="" />}
+                    {(item.source?.url || item.attachment?.url) && (
+                      <div className="film-block-play">[PLAY VIDEO]</div>
+                    )}
+                    {text}
+                  </div>
+                  
+                 
+                </div> 
+              );
+            })}
           </div>
         )}
 
-        {view === 'publications' && !isBioOpen && (
-          <div className="publications-wrapper">
-            <div className="pub-column">
+       {view === 'publications' && !isBioOpen && (
+          <div 
+            className="publications-wrapper" 
+            style={{ display: 'flex', flexDirection: 'row' }}
+          >
+            
+            {/* LEFT COLUMN: CHAPBOOKS */}
+            <div className="pub-column" style={{ flex: 1 }}>
               {chapbookItems.map((pub, index) => (
                 <div 
                   key={pub.id} 
                   className="pub-block"
-                  onClick={() => setActiveLightboxIndex(index)}
+                  onClick={() => {
+                    setActiveLightboxIndex(index);
+                    setActiveLightboxType('chapbooks');
+                  }}
                   onMouseEnter={() => setHoveredBlock(pub)}
                   onMouseLeave={() => setHoveredBlock(null)}
                 >
@@ -505,12 +536,17 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <div className="pub-column">
+
+            {/* RIGHT COLUMN: PUBLICATIONS */}
+            <div className="pub-column" style={{ flex: 1 }}>
               {pubItems.map((pub, index) => (
                 <div 
                   key={pub.id} 
                   className="pub-block"
-                  onClick={() => setActiveLightboxIndex(index)}
+                  onClick={() => {
+                    setActiveLightboxIndex(index);
+                    setActiveLightboxType('pubs');
+                  }}
                   onMouseEnter={() => setHoveredBlock(pub)}
                   onMouseLeave={() => setHoveredBlock(null)}
                 >
@@ -519,6 +555,7 @@ export default function App() {
                 </div>
               ))}
             </div>
+
           </div>
         )}
 
